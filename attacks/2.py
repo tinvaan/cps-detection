@@ -8,8 +8,6 @@
 # 2 attack
 
 import time
-import string
-import datetime
 from pycomm.ab_comm.clx import Driver as ClxDriver
 
 PLC_IPS = {

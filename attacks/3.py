@@ -36,7 +36,7 @@ def detect_anomaly(plc_ip):
                 moving = read_plc_tag(plc, MOVING_TAG)
                 moving_to_level1 = read_plc_tag(plc, MOVING_TO_LEVEL1_TAG)
                 moving_to_level2 = read_plc_tag(plc, MOVING_TO_LEVEL2_TAG)
-                
+
                 if moving_to_level1:
                     target_level = 1
                 elif moving_to_level2:
@@ -59,6 +59,7 @@ def detect_anomaly(plc_ip):
 
 def main():
     detect_anomaly(PLC_IPS['plc1'])
+
 
 if __name__ == '__main__':
     main()
