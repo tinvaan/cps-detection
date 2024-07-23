@@ -1,0 +1,7 @@
+{
+    "pylint.ignorePatterns": [
+        "**/site-packages/**/*.py",
+        ".vscode/*.py",
+        "**/*.py"
+    ]
+}
