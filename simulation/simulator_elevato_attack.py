@@ -11,11 +11,12 @@ import numpy as np
 import pandas as pd
 
 # MODES
-ATTACK_TYPES = ["NONE", "ATTACK_MAX_TEMP", "ATTACK_MAX_WEIGHT", "BUTTON_ATTACK"]
+ATTACK_TYPES = ["NONE", "ATTACK_MAX_TEMP", "ATTACK_MAX_WEIGHT", "BUTTON_ATTACK","BIAS", "SURGE", "RANDOM"]
 DEBUG = True
 SHOW_PLOTS = False
 SAVE_PLOTS = True
 ML = True
+BIAS_SELECTION = list(range(-17,-14)) + list(range(14,17))
 
 # Elevator initial values
 MAX_TEMP = 100
@@ -24,7 +25,7 @@ INITIAL_CURRENT_LEVEL = 1
 RUNS = 10
 SIMULATION_TIME = 500
 
-# Create folders to save plots and results
+# Create folders to save plots and results 创造文件夹来存放结果
 def init_folders():
     if not os.path.exists("output"):
         print("Creating output folder...")
@@ -35,6 +36,7 @@ def init_folders():
         print("Output folder already exists. Skipping creation of output folder.")
 
 @dataclass
+# Instantiate some elevator data
 class ElevatorState:
     ThresTemp: int = field(default_factory=lambda: random.randint(30, 99))
     ButtonLevel1: int = 0
@@ -51,6 +53,7 @@ class ElevatorState:
     MAX_WEIGHT: int = 1200
     MAX_TEMP: int = 100
 
+# Get the elevator status
 def get_elevator_actuators(state):
     return {
         "moving": state.moving,
@@ -63,13 +66,15 @@ def get_elevator_actuators(state):
         "fireAlarm": state.fireAlarm,
     }
 
+# Generate noise normal deviation value
 def generate_noise(lower=-5, upper=0.5):
     return np.random.uniform(lower, upper)
 
+# Get the elevator status under noise
 def get_noisy_elevator_state(state):
-    noise = {key: generate_noise() for key in ["ThresTemp", "moving", "movingToLevel1", "movingToLevel2", "doorOpen"]}
+    noise = {key: generate_noise() for key in ["ThresTemp", "moving", "movingToLevel1", "movingToLevel2", "doorOpen", "weight"]}
     fire_alarm = state.ThresTemp + noise["ThresTemp"] > state.MAX_TEMP
-    overweight_alarm = state.weight > state.MAX_WEIGHT
+    overweight_alarm = state.weight + noise["weight"] > state.MAX_WEIGHT
     return {
         "fire_alarm": fire_alarm,
         "overweight_alarm": overweight_alarm,
@@ -78,9 +83,11 @@ def get_noisy_elevator_state(state):
         "movingToLevel1": int(state.movingToLevel1 + noise["movingToLevel1"] > 0.5),
         "movingToLevel2": int(state.movingToLevel2 + noise["movingToLevel2"] > 0.5),
         "doorOpen": int(state.doorOpen + noise["doorOpen"] > 0.5),
+        "weight": state.weight + noise["weight"],
     }
 
-def generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, title=("NONE", False)):
+# Generate pictures
+def generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, title=("NONE", False), detection_status=None):
     if SHOW_PLOTS or SAVE_PLOTS:
         fig, axs = plt.subplots(2, figsize=(12, 12))
         axs[0].set_title(f"Raw sensor measurements (Attack type: {title[0]})")
@@ -100,9 +107,22 @@ def generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, t
             axs[0].plot(current_level1, linestyle="-", linewidth=1, label="CurrentLevel1")
             axs[0].plot(button_level1, linestyle="-", linewidth=0.8, label="ButtonLevel1")
             axs[0].plot(button_level2, linestyle="-", linewidth=0.8, label="ButtonLevel2")
+        elif title[0]=="BIAS":
+            axs[0].plot(MAX_TEMP, linestyle="-", linewidth=5, label="thresholds")
+            axs[0].plot(sensor_measurements, linestyle="-", linewidth=0.8, label="actual")
+        elif title[0]=="SURGE":
+            axs[0].plot(MAX_TEMP, linestyle="-", linewidth=5, label="thresholds")
+            axs[0].plot(sensor_measurements, linestyle="-", linewidth=0.8, label="actual")
+        elif title[0]=="RANDOM":
+            axs[0].plot(MAX_TEMP, linestyle="-", linewidth=5, label="thresholds")
+            axs[0].plot(sensor_measurements, linestyle="-", linewidth=0.8, label="actual")
         else:
             axs[0].plot(MAX_TEMP, linestyle="-", linewidth=5, label="thresholds")
             axs[0].plot(sensor_measurements, linestyle="-", linewidth=0.8, label="actual")
+
+        if detection_status:
+            attack_indices = [i for i, status in enumerate(detection_status) if status == "attack"]
+            axs[0].scatter(attack_indices, [sensor_measurements[i] for i in attack_indices], color='red', label='Attack detected', zorder=5)
 
         axs[0].legend()
 
@@ -124,10 +144,13 @@ def generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, t
             fig.savefig(f"{filepath}/{num}.png")
             plt.close()
 
-def simulate_elevator(state: ElevatorState, cycles: int = 10, attack_type: str = "NONE"):
+# Simulation
+def simulate_elevator(state: ElevatorState, cycles: int = 10, attack_type: str = "NONE", attack_start: int = 1, attack_end: int = 100):
     MAX_TEMP, MAX_WEIGHT, sensor_measurements, estimated_measurements, actuators_status = [], [], [], [], []
+    BIAS_VALUE:int = 30
+    BIAS_VALUE:int == random.choice(BIAS_SELECTION)
 
-    for _ in range(cycles):
+    for i in range(cycles):
         if not state.moving and random.randint(1, 10) == 1:
             if random.randint(1, 2) == 1:
                 state.ButtonLevel1 = 1
@@ -155,6 +178,16 @@ def simulate_elevator(state: ElevatorState, cycles: int = 10, attack_type: str =
                     state.moving = 0
 
         noisy_state = get_noisy_elevator_state(state)
+        # Consider doing it here
+        if attack_type == "BIAS" and attack_start <= i < attack_end:
+            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
+
+        if attack_type == "SURGE" and attack_start <= i < attack_end:
+            noisy_state["ThresTemp"] = 120
+
+        if attack_type == "RANDOM" and attack_start <= i < attack_end:
+            BIAS_VALUE:int == random.randint(-30,30)
+            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
 
         estimated_measurements.append(state.ThresTemp)
         sensor_measurements.append(noisy_state["ThresTemp"])
@@ -167,7 +200,7 @@ def simulate_elevator(state: ElevatorState, cycles: int = 10, attack_type: str =
             "movingToLevel2": noisy_state["movingToLevel2"],
             "temp": noisy_state["ThresTemp"],
             "MAX_TEMP": state.MAX_TEMP,
-            "weight": state.weight,
+            "weight": noisy_state["weight"],
             "MAX_WEIGHT": state.MAX_WEIGHT,
             "currentLevel": state.currentLevel,
             "ButtonLevel1": state.ButtonLevel1,
@@ -176,7 +209,6 @@ def simulate_elevator(state: ElevatorState, cycles: int = 10, attack_type: str =
 
         MAX_TEMP.append(state.MAX_TEMP)
         MAX_WEIGHT.append(state.MAX_WEIGHT)
-        
         update_state(state, noisy_state)
 
     return MAX_TEMP, MAX_WEIGHT, estimated_measurements, sensor_measurements, actuators_status
@@ -259,10 +291,12 @@ def update_state(state, noisy_state):
     state.ButtonLevel1 = 0
     state.ButtonLevel2 = 0
 
-def run_simulation(timer, attack_type="NONE"):
+# The function that actually performs the attack
+def run_simulation(timer, attack_type="NONE", attack_start:int =1 , attack_end:int = 100):
     state = ElevatorState()
-    return simulate_elevator(state, timer, attack_type)
+    return simulate_elevator(state, timer, attack_type, attack_start, attack_end)
 
+# Determine the simulation parameters mainly to determine whether there is an intermediate function of the attack
 def run_simulations_with_attacks():
     attack_type = random.choice(ATTACK_TYPES)
     attack_start = random.randint(0, 300)
@@ -276,10 +310,18 @@ def run_simulations_with_attacks():
     else:
         print("Normal operation. No attack simulated.")
 
-    MAX_TEMP, MAX_WEIGHT, estimated_measurements, sensor_measurements, actuators_status = run_simulation(SIMULATION_TIME, attack_type)
-    generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, title=(attack_type, False))
-    return sensor_measurements, actuators_status, attack_type
+    MAX_TEMP, MAX_WEIGHT, estimated_measurements, sensor_measurements, actuators_status = run_simulation(SIMULATION_TIME, attack_type, attack_start, attack_end)
 
+    # Ensure actuators_status is assigned before it is used
+    detection_status = ["begin"] * len(actuators_status)
+    for i in range(len(actuators_status)):
+        if actuators_status[i]["MAX_TEMP"] != 100 or actuators_status[i]["MAX_WEIGHT"] != 1200:
+            detection_status[i] = "attack"
+
+    generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, title=(attack_type, False), detection_status=detection_status)
+    return sensor_measurements, actuators_status, attack_type, detection_status
+
+# Main program
 if __name__ == "__main__":
     if os.path.exists("output"):
         shutil.rmtree("output/")
@@ -290,9 +332,10 @@ if __name__ == "__main__":
 
     for i in range(RUNS):
         print(f"\n******  Simulation Run #{i + 1} *****")
-        sensor_measurements, actuators_status, attack_type = run_simulations_with_attacks()
+        sensor_measurements, actuators_status, attack_type, detection_status = run_simulations_with_attacks()
         df = pd.DataFrame(actuators_status)
         df["attack"] = attack_type
+        df["detection"] = detection_status
 
         mode = "a" if i > 0 or (os.path.exists("output/results.csv") and os.path.getsize("output/results.csv") != 0) else "w"
         df.to_csv("output/results.csv", mode=mode, index=False, header=not os.path.exists("output/results.csv"))
