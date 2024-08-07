@@ -1,5 +1,16 @@
 
 import os
+import shutil
+
+
+def setup():
+    """ Prepare the directory structure """
+    if os.path.exists('runs'):
+        shutil.rmtree('runs/')
+
+    os.makedirs("runs")
+    for attack in Config.ATTACK_TYPES:
+        os.makedirs(f"runs/ATTACK_TYPE_{attack}")
 
 
 class Config:

@@ -1,26 +1,16 @@
 
 import os
-import shutil
 import pandas as pd
 
 from time import perf_counter as timer
 
+from elevator import runtime
 from elevator.runtime import Config
 from elevator.simulator import Elevator
 
 
-# Create folders to save plots and results
-def setup():
-    """ Prepare the directory structure """
-    if os.path.exists('runs'):
-        shutil.rmtree('runs/')
-
-    os.makedirs("runs")
-    for attack in Config.ATTACK_TYPES:
-        os.makedirs(f"runs/ATTACK_TYPE_{attack}")
-
 def run():
-    setup()
+    runtime.setup()
     attacks, ex = 0, Elevator()
 
     begin = timer()
