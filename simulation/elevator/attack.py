@@ -27,13 +27,13 @@ SIMULATION_TIME = 500
 
 # Create folders to save plots and results
 def init_folders():
-    if not os.path.exists("output"):
-        print("Creating output folder...")
-        os.makedirs("output")
+    if not os.path.exists("runs"):
+        print("Creating runtime folder...")
+        os.makedirs("runs")
         for attack in ATTACK_TYPES:
-            os.makedirs(f"output/ATTACK_TYPE_{attack}")
+            os.makedirs(f"runs/ATTACK_TYPE_{attack}")
     else:
-        print("Output folder already exists. Skipping creation of output folder.")
+        print("Runs folder already exists.")
 
 @dataclass
 # Instantiate some elevator data
@@ -139,7 +139,7 @@ def generate_plot(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, t
         if SHOW_PLOTS:
             plt.show(block=False)
         if SAVE_PLOTS:
-            filepath = f"output/ATTACK_TYPE_{title[0]}"
+            filepath = f"runs/ATTACK_TYPE_{title[0]}"
             num = len([f for f in os.listdir(filepath) if os.path.isfile(os.path.join(filepath, f))]) + 1
             fig.savefig(f"{filepath}/{num}.png")
             plt.close()
@@ -323,8 +323,8 @@ def run_simulations_with_attacks():
 
 # Main program
 if __name__ == "__main__":
-    if os.path.exists("output"):
-        shutil.rmtree("output/")
+    if os.path.exists("runs"):
+        shutil.rmtree("runs/")
     init_folders()
 
     start = timer()
@@ -337,8 +337,8 @@ if __name__ == "__main__":
         df["attack"] = attack_type
         df["detection"] = detection_status
 
-        mode = "a" if i > 0 or (os.path.exists("output/results.csv") and os.path.getsize("output/results.csv") != 0) else "w"
-        df.to_csv("output/results.csv", mode=mode, index=False, header=not os.path.exists("output/results.csv"))
+        mode = "a" if i > 0 or (os.path.exists("runs/results.csv") and os.path.getsize("runs/results.csv") != 0) else "w"
+        df.to_csv("runs/results.csv", mode=mode, index=False, header=not os.path.exists("runs/results.csv"))
 
         if attack_type != "NONE":
             attacks_generated += 1
