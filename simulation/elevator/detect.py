@@ -25,8 +25,9 @@ def run():
 
         attacks += 1 if attack_type != "NONE" else 0
     end = timer()
-    print(f"\nNumber of simulations with attacks: {attacks}\nTime elapsed: {end - begin} seconds")
+    return attacks, (end - begin)
 
 
 if __name__ == "__main__":
-    run()
+    attacks, elapsed = run()
+    print(f"\nNumber of simulations with attacks: {attacks}\nTime elapsed: {elapsed} seconds")
