@@ -5,43 +5,40 @@ import pandas as pd
 
 from time import perf_counter as timer
 
-from .runtime import Config
-from .simulator import Elevator
+from elevator.runtime import Config
+from elevator.simulator import Elevator
 
 
-# Create folders to save plots and results
-def init_folders():
-    if os.path.exists("runs"):
-        shutil.rmtree("runs/")
+def setup():
+    """ Prepare the directory structure """
+    if os.path.exists('runs'):
+        shutil.rmtree('runs/')
 
-    if not os.path.exists("runs"):
-        print("Creating runtime folder...")
-        os.makedirs("runs")
-        for attack in Config.ATTACK_TYPES:
-            os.makedirs(f"runs/ATTACK_TYPE_{attack}")
-    else:
-        print("Runs folder already exists.")
+    os.makedirs("runs")
+    for attack in Config.ATTACK_TYPES:
+        os.makedirs(f"runs/ATTACK_TYPE_{attack}")
 
-# Main program
-if __name__ == "__main__":
-    init_folders()
 
+def run():
+    setup()
     ex = Elevator()
-    attacked = 0
+    attacks = 0
 
     begin = timer()
-    for i in range(Config.RUNS):
-        print(f"\n******  Simulation Run #{i + 1} *****")
-        sensor_measurements, actuators_status, attack_type, detection_status = ex.attack()
-        df = pd.DataFrame(actuators_status)
-        df["attack"] = attack_type
-        df["detection"] = detection_status
+    for run in range(Config.RUNS):
+        print(f"\n******  Simulation Run #{run + 1} *****")
+        sensors, actuators, attack_type, detection = ex.attack()
+        df = pd.DataFrame(actuators)
+        df.update({'attack': attack_type, 'detection': detection})
 
-        mode = "a" if i > 0 or (os.path.exists("runs/results.csv") and os.path.getsize("runs/results.csv") != 0) else "w"
+        mode = "a" if run > 0 or (os.path.exists("runs/results.csv") and os.path.getsize("runs/results.csv") != 0) else "w"
         df.to_csv("runs/results.csv", mode=mode, index=False, header=not os.path.exists("runs/results.csv"))
 
-        if attack_type != "NONE":
-            attacked += 1
+        attacks += 1 if attack_type != "NONE" else 0
     end = timer()
 
-    print(f"\nNumber of simulations with attacks: {attacked}\nTime elapsed: {end - begin} seconds")
+    print(f"\nNumber of simulations with attacks: {attacks}\nTime elapsed: {end - begin} seconds")
+
+
+if __name__ == '__main__':
+    run()

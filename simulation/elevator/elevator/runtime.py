@@ -3,7 +3,6 @@ import os
 
 
 class Config:
-    ATTACK_TYPES = ["NONE", "ATTACK_MAX_TEMP", "ATTACK_MAX_WEIGHT", "BUTTON_ATTACK","BIAS", "SURGE", "RANDOM"]
     ML = True
     DEBUG = True
     SAVE_PLOTS = True
@@ -16,3 +15,13 @@ class Config:
     SIMULATION_TIME = 500
     INITIAL_CURRENT_LEVEL = 1
     RUNS = os.getenv('SIM_RUNS', 10)
+
+    ATTACK_TYPES = [
+        "NONE",
+        "BIAS",
+        "SURGE",
+        "RANDOM"
+        "BUTTON_ATTACK",
+        "ATTACK_MAX_TEMP",
+        "ATTACK_MAX_WEIGHT",
+    ]
