@@ -284,7 +284,7 @@ def run_simulations_with_attacks():
     MAX_TEMP, MAX_WEIGHT, estimated_measurements, sensor_measurements, actuators_status = run_simulation(SIMULATION_TIME, attack_type)
 
     # Ensure actuators_status is assigned before it is used
-    detection_status = ["begin"] * len(actuators_status)
+    detection_status = ["benign"] * len(actuators_status)
     for i in range(len(actuators_status)):
         if actuators_status[i]["MAX_TEMP"] != 100 or actuators_status[i]["MAX_WEIGHT"] != 1200:
             detection_status[i] = "attack"

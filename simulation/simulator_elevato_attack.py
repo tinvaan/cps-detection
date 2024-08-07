@@ -25,7 +25,7 @@ INITIAL_CURRENT_LEVEL = 1
 RUNS = os.getenv('SIM_RUNS', 10)
 SIMULATION_TIME = 500
 
-# Create folders to save plots and results 创造文件夹来存放结果
+# Create folders to save plots and results
 def init_folders():
     if not os.path.exists("output"):
         print("Creating output folder...")
@@ -313,7 +313,7 @@ def run_simulations_with_attacks():
     MAX_TEMP, MAX_WEIGHT, estimated_measurements, sensor_measurements, actuators_status = run_simulation(SIMULATION_TIME, attack_type, attack_start, attack_end)
 
     # Ensure actuators_status is assigned before it is used
-    detection_status = ["begin"] * len(actuators_status)
+    detection_status = ["benign"] * len(actuators_status)
     for i in range(len(actuators_status)):
         if actuators_status[i]["MAX_TEMP"] != 100 or actuators_status[i]["MAX_WEIGHT"] != 1200:
             detection_status[i] = "attack"
