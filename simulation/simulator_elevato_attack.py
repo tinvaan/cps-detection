@@ -22,7 +22,7 @@ BIAS_SELECTION = list(range(-17,-14)) + list(range(14,17))
 MAX_TEMP = 100
 MAX_WEIGHT = 1200
 INITIAL_CURRENT_LEVEL = 1
-RUNS = 10
+RUNS = os.getenv('SIM_RUNS', 10)
 SIMULATION_TIME = 500
 
 # Create folders to save plots and results 创造文件夹来存放结果
