@@ -25,7 +25,7 @@ class Config:
     MAX_WEIGHT = 1200
     SIMULATION_TIME = 500
     INITIAL_CURRENT_LEVEL = 1
-    RUNS = os.getenv('SIM_RUNS', 10)
+    RUNS = int(os.getenv('SIM_RUNS', 10))
 
     ATTACK_TYPES = [
         "NONE",
