@@ -88,7 +88,7 @@ class ChangeWriter:
 
     def get(self, category, sort=None):
         if category not in Config.ATTACK_TYPES:
-            return pd.DataFrame()
+            return self.changes
 
         rows = self.changes.loc[self.changes.category == category]
         return rows if not sort else rows.sort_values(by=sort, ascending=False)
@@ -130,9 +130,6 @@ if __name__ == "__main__":
     A.add_argument("-s", "--sensor", help="target system sensor", default='temp')
     A.add_argument("-m", "--metric", help="detection metric", default='detection_effectiveness')
     args = A.parse_args()
-
-    if args.attack is None:
-        raise Exception('Target attack for detection not specified')
 
     defects, duration = ChangeDetector().run()
     print(ChangeWriter(defects).get(args.attack, args.metric))
