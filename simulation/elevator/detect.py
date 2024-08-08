@@ -12,108 +12,127 @@ from elevator.runtime import Config
 from elevator.simulator import Elevator
 
 
-def log(run, values, states, attack_type, detections):
-    df = pd.DataFrame(states)
-    df.update({'attack': attack_type, 'detection': detections})
+class ChangeDetector:
+    def __init__(self):
+        self.duration = -1          # Elapsed time
+        self.writer = None          # ChangeWriter instance
 
-    mode = "a" if run > 0 or (os.path.exists("runs/results.csv") and os.path.getsize("runs/results.csv") != 0) else "w"
-    df.to_csv("runs/results.csv", mode=mode, index=False, header=not os.path.exists("runs/results.csv"))
+    def cusum(
+        self,
+        standard,
+        observed,
+        params={'drift': 0, 'threshold': 0},
+        meta={'attacks': 0, 'category': None, 'property': None}
+    ):
+        spikes = []
+        hits, misses = 0, 0
+        pos, neg = [0], [0]
+        drift, threshold = params.get('drift'), params.get('threshold')
+
+        for idx, (std, obs) in enumerate(zip(standard, observed)):
+            deviation = abs(std - obs)
+            pos.append(max(0, pos[-1] + deviation - drift))
+            neg.append(max(0, neg[-1] - deviation - drift))
+
+            if pos[-1] > threshold or neg[-1] > threshold:
+                spikes.append(idx)
+                pos[-1], neg[-1] = 0, 0
+
+                hits += 1 if meta.get('category') != 'NONE' else 0
+                misses += 1 if meta.get('category') == 'NONE' else 0
+
+        return {
+            'detected': hits,
+            'false_detects': misses,
+            'samples': len(standard),
+            'attacks': meta.get('attacks'),
+            'category': meta.get('category'),
+            'false_detects_ratio': ('N/A' if meta.get('attacks') == 0
+                                        else min(100, (misses / meta.get('attacks')) * 100)),
+            'detection_effectiveness': ('N/A' if meta.get('attacks') == 0
+                                            else min(100, (hits / meta.get('attacks')) * 100))
+        }
+
+    def run(self):
+        runtime.setup()
+
+        summary = []
+        thresholds = [2, 4, 6, 8]
+        drifts = [0.1, 0.3, 0.5, 0.7, 0.9]
+
+        begin = timer()
+        for drift, threshold in itertools.product(drifts, thresholds):
+            sim = Elevator()
+            for cycle in tqdm(range(Config.RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
+                num_attacks, category, temps, weights, readings, labels = sim.attack()
+
+                defects = self.cusum(
+                    temps,
+                    [r.get('temp') for r in readings],
+                    {'drift': drift, 'threshold': threshold},
+                    {'property': 'temp', 'attacks': num_attacks, 'category': category}
+                )
+
+                defects.update({'cycle': cycle, 'drift': drift, 'threshold': threshold})
+                summary.append(defects)
+
+        self.duration = timer() - begin
+        self.writer = ChangeWriter(summary)
+        return self.writer.changes, self.duration
 
 
-def process(summary):
-    for idx, record in enumerate(summary):
-        try:
-            total = record.get('samples')
-            attacks = record.get('attacks')
-            detected = record.get('detected')
-            falseDetects = record.get('false_detects')
 
-            if attacks > 0 and detected > attacks:
-                falseDetects += (attacks - detected)
-                detected = attacks
+class ChangeWriter:
+    def __init__(self, data: dict):
+        self.changes = self.process(data)
 
-            record.update({
-                'detects_ratio': float(100) if attacks == 0 else (detected / attacks) * 100,
-                'false_detects_ratio': float(0) if (total - attacks) == 0 else (falseDetects / (total - attacks)) * 100
-            })
-            summary[idx] = record
-        except Exception:
-            pass
+    def get(self, category, sort=None):
+        if category not in Config.ATTACK_TYPES:
+            return pd.DataFrame()
 
-    return pd.DataFrame(summary)
+        rows = self.changes.loc[self.changes.category == category]
+        return rows if not sort else rows.sort_values(by=sort, ascending=False)
 
-def get(df, category):
-    if category not in Config.ATTACK_TYPES:
-        return pd.DataFrame()
-    return df.loc[df.category == category]
+    def log(self, run, values, states, attack_type, detections):
+        df = pd.DataFrame(states)
+        df.update({'attack': attack_type, 'detection': detections})
 
-def cusum(
-    standard,
-    observed,
-    params={'drift': 0, 'threshold': 0},
-    meta={'attacks': 0, 'category': None, 'property': None}
-):
-    spikes = []
-    hits, misses = 0, 0
-    pos, neg = [0], [0]
+        mode = "a" if run > 0 or (os.path.exists("runs/results.csv") and os.path.getsize("runs/results.csv") != 0) else "w"
+        df.to_csv("runs/results.csv", mode=mode, index=False, header=not os.path.exists("runs/results.csv"))
 
-    drift, threshold = params.get('drift'), params.get('threshold')
+    def process(self, summary):
+        for idx, record in enumerate(summary):
+            try:
+                total = record.get('samples')
+                attacks = record.get('attacks')
+                detected = record.get('detected')
+                falseDetects = record.get('false_detects')
 
-    for idx, (std, obs) in enumerate(zip(standard, observed)):
-        deviation = abs(std - obs)
-        pos.append(max(0, pos[-1] + deviation - drift))
-        neg.append(max(0, neg[-1] - deviation - drift))
+                if attacks > 0 and detected > attacks:
+                    falseDetects += (attacks - detected)
+                    detected = attacks
 
-        if pos[-1] > threshold or neg[-1] > threshold:
-            spikes.append(idx)
-            pos[-1], neg[-1] = 0, 0
+                record.update({
+                    'detects_ratio': float(100) if attacks == 0 else (detected / attacks) * 100,
+                    'false_detects_ratio': float(0) if (total - attacks) == 0 else (falseDetects / (total - attacks)) * 100
+                })
+                summary[idx] = record
+            except Exception:
+                pass
 
-            hits += 1 if meta.get('category') != 'NONE' else 0
-            misses += 1 if meta.get('category') == 'NONE' else 0
-
-    return {
-        'detected': hits,
-        'false_detects': misses,
-        'samples': len(standard),
-        'attacks': meta.get('attacks'),
-        'category': meta.get('category'),
-        'false_detects_ratio': ('N/A' if meta.get('attacks') == 0
-                                      else min(100, (misses / meta.get('attacks')) * 100)),
-        'detection_effectiveness': ('N/A' if meta.get('attacks') == 0
-                                          else min(100, (hits / meta.get('attacks')) * 100))
-    }
-
-def run():
-    runtime.setup()
-
-    summary = []
-    thresholds = [2, 4, 6, 8]
-    drifts = [0.1, 0.3, 0.5, 0.7, 0.9]
-
-    begin = timer()
-    for drift, threshold in itertools.product(drifts, thresholds):
-        sim = Elevator()
-        for cycle in tqdm(range(Config.RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
-            num_attacks, category, temps, weights, readings, labels = sim.attack()
-
-            defects = cusum(
-                temps,
-                [r.get('temp') for r in readings],
-                {'drift': drift, 'threshold': threshold},
-                {'property': 'temp', 'attacks': num_attacks, 'category': category}
-            )
-
-            defects.update({'cycle': cycle, 'drift': drift, 'threshold': threshold})
-            summary.append(defects)
-
-    return process(summary), (timer() - begin)
-
+        return pd.DataFrame(summary)
 
 if __name__ == "__main__":
-    attacks, elapsed = run()
-    attackFrame = process(attacks)
-    print(get(attackFrame, 'BUTTON_ATTACK'))
-    print(get(attackFrame, 'ATTACK_MAX_TEMP'))
-    print(get(attackFrame, 'ATTACK_MAX_WEIGHT'))
+    cd = ChangeDetector()
+    defects, duration = cd.run()
 
-    print(f"\nTime elapsed: {elapsed} seconds")
+    cw = ChangeWriter(defects)
+    print(cw.get('BUTTON_ATTACK', 'detection_effectiveness'))
+
+    # attacks, elapsed = run()
+    # attackFrame = process(attacks)
+    # print(get(attackFrame, 'BUTTON_ATTACK'))
+    # print(get(attackFrame, 'ATTACK_MAX_TEMP'))
+    # print(get(attackFrame, 'ATTACK_MAX_WEIGHT'))
+
+    # print(f"\nTime elapsed: {elapsed} seconds")
