@@ -1,5 +1,5 @@
 
-import ipdb
+import argparse
 import itertools
 import os
 import pandas as pd
@@ -109,10 +109,12 @@ class ChangeWriter:
                 falseDetects = record.get('false_detects')
 
                 if attacks > 0 and detected > attacks:
-                    falseDetects += (attacks - detected)
+                    falseDetects += abs(attacks - detected)
                     detected = attacks
 
                 record.update({
+                    'detected': detected,
+                    'false_detects': falseDetects,
                     'detects_ratio': float(100) if attacks == 0 else (detected / attacks) * 100,
                     'false_detects_ratio': float(0) if (total - attacks) == 0 else (falseDetects / (total - attacks)) * 100
                 })
@@ -123,16 +125,14 @@ class ChangeWriter:
         return pd.DataFrame(summary)
 
 if __name__ == "__main__":
-    cd = ChangeDetector()
-    defects, duration = cd.run()
+    A = argparse.ArgumentParser()
+    A.add_argument("-a", "--attack", help="target attack category")
+    A.add_argument("-m", "--metric", help="detection metric", default='detection_effectiveness')
+    args = A.parse_args()
 
-    cw = ChangeWriter(defects)
-    print(cw.get('BUTTON_ATTACK', 'detection_effectiveness'))
+    if args.attack is None:
+        raise Exception('Target attack for detection not specified')
 
-    # attacks, elapsed = run()
-    # attackFrame = process(attacks)
-    # print(get(attackFrame, 'BUTTON_ATTACK'))
-    # print(get(attackFrame, 'ATTACK_MAX_TEMP'))
-    # print(get(attackFrame, 'ATTACK_MAX_WEIGHT'))
-
-    # print(f"\nTime elapsed: {elapsed} seconds")
+    defects, duration = ChangeDetector().run()
+    print(ChangeWriter(defects).get(args.attack, args.metric))
+    print(f"\nTime elapsed: {duration} seconds")
