@@ -255,12 +255,14 @@ class Elevator:
 
         num_attacks, temps, weights, readings = self.run(Config.SIMULATION_TIME, category, start, end)
 
-        detection_status = ["benign"] * len(readings)
-        for i in range(len(readings)):
-            if readings[i]["MAX_TEMP"] != 100 or readings[i]["MAX_WEIGHT"] != 1200:
-                detection_status[i] = "attack"
+        # TODO: Clear this out completely
+        # detection_status = ["benign"] * len(readings)
+        # for i in range(len(readings)):
+        #     if readings[i]["MAX_TEMP"] != 100 or readings[i]["MAX_WEIGHT"] != 1200:
+        #         detection_status[i] = "attack"
 
         # plots.draw(MAX_TEMP, MAX_WEIGHT, sensor_measurements, snapshots,
         #            title=(category, False), detection_status=detection_status)
 
-        return num_attacks, category, temps, weights, readings, detection_status
+        # TODO: Clear out the `detection_status`
+        return num_attacks, category, temps, weights, readings # , detection_status

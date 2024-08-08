@@ -64,7 +64,7 @@ class ChangeDetector:
         for drift, threshold in itertools.product(drifts, thresholds):
             sim = Elevator()
             for cycle in tqdm(range(Config.RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
-                num_attacks, category, temps, weights, readings, labels = sim.attack()
+                num_attacks, category, temps, weights, readings = sim.attack()
 
                 defects = self.cusum(
                     temps if sensor == 'temp' else weights,
