@@ -31,7 +31,7 @@ class Config:
         "NONE",
         "BIAS",
         "SURGE",
-        "RANDOM"
+        "RANDOM",
         "BUTTON_ATTACK",
         "ATTACK_MAX_TEMP",
         "ATTACK_MAX_WEIGHT",
