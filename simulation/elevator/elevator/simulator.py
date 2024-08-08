@@ -195,7 +195,7 @@ class Elevator:
     def simulate(
         self,
         state: ElevatorState,
-        cycles: int=10,
+        rounds: int,
         attack_type: str="NONE",
         attack_start: int=1,
         attack_end: int=100
@@ -205,7 +205,7 @@ class Elevator:
         weights: List[int] = []             # Temperature values under noise
         readings: List[dict] = []           # state of the system for the current simulation cycle
 
-        for cycle in range(cycles):
+        for cycle in range(rounds):
             noise = self.get_noisy_elevator_state(state)
 
             if not state.moving and random.randint(1, 10) == 1:
@@ -239,21 +239,18 @@ class Elevator:
 
         return num_attacks, temps, weights, readings
 
-    def run(self, cycles, attack_type="NONE", attack_start:int =1 , attack_end:int = 100):
-        """ The function that actually performs the attack """
-        return self.simulate(ElevatorState(), cycles, attack_type, attack_start, attack_end)
-
     def attack(self):
         """
         Determine the simulation parameters mainly to determine
         whether there is an intermediate function of the attack
         """
-        category = random.choice(Config.ATTACK_TYPES)
+        rounds = Config.SIMULATION_ROUNDS
         start = random.randint(0, 300)
         duration = random.randint(1, 100)
-        end = start + duration
+        category = random.choice(Config.ATTACK_TYPES)
 
-        num_attacks, temps, weights, readings = self.run(Config.SIMULATION_ROUNDS, category, start, end)
+        num_attacks, temps, weights, readings = self.simulate(ElevatorState(),
+                                                              rounds, category, start, start + duration)
 
         # TODO: Clear this out completely
         # detection_status = ["benign"] * len(readings)
