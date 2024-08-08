@@ -1,8 +1,10 @@
 
+import ipdb
 import random
 import numpy as np
 
-from dataclasses import dataclass, field
+from typing import List
+from dataclasses import dataclass, field, asdict
 
 from . import plots
 from .runtime import Config
@@ -11,20 +13,23 @@ from .runtime import Config
 @dataclass
 class ElevatorState:
     """ Initialise some elevator data """
-    ThresTemp: int = field(default_factory=lambda: random.randint(30, 99))
-    ButtonLevel1: int = 0
-    ButtonLevel2: int = 0
-    currentLevel: int = Config.INITIAL_CURRENT_LEVEL
+    MAX_TEMP: int = 100
+    MAX_WEIGHT: int = 1200
     moving: int = 0
     doorOpen: int = 0
+    fireAlarm: int = 0
     doorOpening: int = 0
     doorClosing: int = 0
-    fireAlarm: int = 0
-    weight: int = field(default_factory=lambda: random.randint(0, 1500))
+    ButtonLevel1: int = 0
+    ButtonLevel2: int = 0
     movingToLevel1: int = 0
     movingToLevel2: int = 0
-    MAX_WEIGHT: int = 1200
-    MAX_TEMP: int = 100
+    currentLevel: int = Config.INITIAL_CURRENT_LEVEL
+    weight: int = field(default_factory=lambda: random.randint(0, 1500))
+    ThresTemp: int = field(default_factory=lambda: random.randint(30, 99))
+
+    def __dict__(self):
+        return asdict(self)
 
 
 class Elevator:
@@ -143,118 +148,122 @@ class Elevator:
         state.ButtonLevel1 = 0
         state.ButtonLevel2 = 0
 
+    def launch_attack(
+        self,
+        attack: dict,
+        cycle: int,
+        BIAS_VALUE: int,
+        state: ElevatorState,
+        noisy_state: ElevatorState,
+    ) -> int:
+        launched = True
+        attack_end = attack.get('attack_end')
+        attack_type = attack.get('attack_type')
+        attack_start = attack.get('attack_start')
+
+        if attack_type == "ATTACK_MAX_TEMP":
+            state.MAX_TEMP = 20
+
+        elif attack_type == "ATTACK_MAX_WEIGHT":
+            state.MAX_WEIGHT = 10
+
+        elif attack_type == "BUTTON_ATTACK":
+            if state.ButtonLevel1:
+                if state.currentLevel == 1:
+                    state.movingToLevel2 = 1
+                    state.moving = 1
+                else:
+                    state.movingToLevel1 = 0
+                    state.moving = 0
+
+            elif state.ButtonLevel2:
+                if state.currentLevel == 2:
+                    state.movingToLevel1 = 1
+                    state.moving = 1
+                else:
+                    state.movingToLevel2 = 0
+                    state.moving = 0
+
+        elif attack_type == "BIAS" and cycle in range(attack_start, attack_end):
+            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
+
+        elif attack_type == "SURGE" and cycle in range(attack_start, attack_end):
+            noisy_state["ThresTemp"] = 120
+
+        elif attack_type == "RANDOM" and cycle in range(attack_start, attack_end):
+            BIAS_VALUE:int = random.randint(-30,30)
+            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
+
+        else:
+            launched = False
+
+        return launched, state, noisy_state
+
     def simulate(self, state: ElevatorState, cycles: int=10,
                  attack_type: str="NONE", attack_start: int=1, attack_end: int=100
     ):
-        MAX_TEMP = []
-        MAX_WEIGHT = []
-
-        BIAS_VALUE:int = 30
+        num_attacks = 0
         BIAS_VALUE:int = random.choice(Config.BIAS_SELECTION)
+        temps: List[int] = []               # Temperature values under normal operation
+        weights: List[int] = []             # Temperature values under noise
+        readings: List[dict] = []           # state of the system for the current simulation cycle
 
-        actuators_status = []
-        sensor_measurements = []
-        estimated_measurements = []
+        for cycle in range(cycles):
+            noisy_state = self.get_noisy_elevator_state(state)
 
-        for i in range(cycles):
             if not state.moving and random.randint(1, 10) == 1:
                 if random.randint(1, 2) == 1:
                     state.ButtonLevel1 = 1
                 else:
                     state.ButtonLevel2 = 1
 
-            if attack_type == "ATTACK_MAX_TEMP":
-                state.MAX_TEMP = 20
-            elif attack_type == "ATTACK_MAX_WEIGHT":
-                state.MAX_WEIGHT = 10
-            elif attack_type == "BUTTON_ATTACK":
-                if state.ButtonLevel1:
-                    if state.currentLevel == 1:
-                        state.movingToLevel2 = 1
-                        state.moving = 1
-                    else:
-                        state.movingToLevel1 = 0
-                        state.moving = 0
-                elif state.ButtonLevel2:
-                    if state.currentLevel == 2:
-                        state.movingToLevel1 = 1
-                        state.moving = 1
-                    else:
-                        state.movingToLevel2 = 0
-                        state.moving = 0
+            payload = {'attack_type': attack_type, 'attack_start': attack_start, 'attack_end': attack_end}
+            attacked, state, noisy_state = self.launch_attack(payload, cycle, BIAS_VALUE, state, noisy_state)
+            num_attacks += int(attacked)
 
-            noisy_state = self.get_noisy_elevator_state(state)
-
-            # Consider doing it here
-            if attack_type == "BIAS" and attack_start <= i < attack_end:
-                noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
-
-            if attack_type == "SURGE" and attack_start <= i < attack_end:
-                noisy_state["ThresTemp"] = 120
-
-            if attack_type == "RANDOM" and attack_start <= i < attack_end:
-                BIAS_VALUE:int = random.randint(-30,30)
-                noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
-
-            estimated_measurements.append(state.ThresTemp)
-            sensor_measurements.append(noisy_state["ThresTemp"])
-            actuators_status.append({
-                "fire_alarm": noisy_state["fire_alarm"],
-                "overweight_alarm": noisy_state["overweight_alarm"],
-                "moving": noisy_state["moving"],
-                "doorOpen": state.doorOpen,
-                "movingToLevel1": noisy_state["movingToLevel1"],
-                "movingToLevel2": noisy_state["movingToLevel2"],
-                "temp": noisy_state["ThresTemp"],
+            temps.append(state.ThresTemp)
+            weights.append(state.weight)
+            readings.append({
                 "MAX_TEMP": state.MAX_TEMP,
-                "weight": noisy_state["weight"],
                 "MAX_WEIGHT": state.MAX_WEIGHT,
+                "doorOpen": state.doorOpen,
                 "currentLevel": state.currentLevel,
                 "ButtonLevel1": state.ButtonLevel1,
                 "ButtonLevel2": state.ButtonLevel2,
+                "moving": noisy_state["moving"],
+                "weight": noisy_state["weight"],
+                "temp": noisy_state["ThresTemp"],
+                "fire_alarm": noisy_state["fire_alarm"],
+                "movingToLevel1": noisy_state["movingToLevel1"],
+                "movingToLevel2": noisy_state["movingToLevel2"],
+                "overweight_alarm": noisy_state["overweight_alarm"],
             })
-
-            MAX_TEMP.append(state.MAX_TEMP)
-            MAX_WEIGHT.append(state.MAX_WEIGHT)
             self.update(state, noisy_state)
 
-        return MAX_TEMP, MAX_WEIGHT, estimated_measurements, sensor_measurements, actuators_status
+        return num_attacks, temps, weights, readings
 
-    def run(self, timer, attack_type="NONE", attack_start:int =1 , attack_end:int = 100):
+    def run(self, cycles, attack_type="NONE", attack_start:int =1 , attack_end:int = 100):
         """ The function that actually performs the attack """
-        return self.simulate(ElevatorState(), timer, attack_type, attack_start, attack_end)
+        return self.simulate(ElevatorState(), cycles, attack_type, attack_start, attack_end)
 
     def attack(self):
         """
         Determine the simulation parameters mainly to determine
         whether there is an intermediate function of the attack
         """
-        attack_type = random.choice(Config.ATTACK_TYPES)
-        attack_start = random.randint(0, 300)
-        attack_duration = random.randint(1, 100)
-        attack_end = attack_start + attack_duration
+        category = random.choice(Config.ATTACK_TYPES)
+        start = random.randint(0, 300)
+        duration = random.randint(1, 100)
+        end = start + duration
 
-        if attack_type != "NONE":
-            print(f"Attack type: {attack_type}")
-            print(f"Attack started at t: {attack_start}")
-            print(f"Attack ended at t: {attack_end}")
-        else:
-            print("Normal operation. No attack simulated.")
+        num_attacks, temps, weights, readings = self.run(Config.SIMULATION_TIME, category, start, end)
 
-        (
-            MAX_TEMP,
-            MAX_WEIGHT,
-            estimated_measurements,
-            sensor_measurements,
-            actuators_status
-        ) = self.run(Config.SIMULATION_TIME, attack_type, attack_start, attack_end)
-
-        # Ensure actuators_status is assigned before it is used
-        detection_status = ["benign"] * len(actuators_status)
-        for i in range(len(actuators_status)):
-            if actuators_status[i]["MAX_TEMP"] != 100 or actuators_status[i]["MAX_WEIGHT"] != 1200:
+        detection_status = ["benign"] * len(readings)
+        for i in range(len(readings)):
+            if readings[i]["MAX_TEMP"] != 100 or readings[i]["MAX_WEIGHT"] != 1200:
                 detection_status[i] = "attack"
 
-        plots.draw(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status,
-                   title=(attack_type, False), detection_status=detection_status)
-        return sensor_measurements, actuators_status, attack_type, detection_status
+        # plots.draw(MAX_TEMP, MAX_WEIGHT, sensor_measurements, snapshots,
+        #            title=(category, False), detection_status=detection_status)
+
+        return num_attacks, category, temps, weights, readings, detection_status
