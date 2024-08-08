@@ -53,7 +53,7 @@ class ChangeDetector:
                                             else min(100, (hits / meta.get('attacks')) * 100))
         }
 
-    def run(self):
+    def run(self, sensor='temp'):
         runtime.setup()
 
         summary = []
@@ -67,8 +67,8 @@ class ChangeDetector:
                 num_attacks, category, temps, weights, readings, labels = sim.attack()
 
                 defects = self.cusum(
-                    temps,
-                    [r.get('temp') for r in readings],
+                    temps if sensor == 'temp' else weights,
+                    [r.get(sensor or 'temp') for r in readings],
                     {'drift': drift, 'threshold': threshold},
                     {'property': 'temp', 'attacks': num_attacks, 'category': category}
                 )
@@ -127,6 +127,7 @@ class ChangeWriter:
 if __name__ == "__main__":
     A = argparse.ArgumentParser()
     A.add_argument("-a", "--attack", help="target attack category")
+    A.add_argument("-s", "--sensor", help="target system sensor", default='temp')
     A.add_argument("-m", "--metric", help="detection metric", default='detection_effectiveness')
     args = A.parse_args()
 
