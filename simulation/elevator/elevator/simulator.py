@@ -151,7 +151,6 @@ class Elevator:
         self,
         attack: dict,
         cycle: int,
-        BIAS_VALUE: int,
         state: ElevatorState,
         noisy_state: ElevatorState,
     ) -> int:
@@ -183,26 +182,31 @@ class Elevator:
                     state.movingToLevel2 = 0
                     state.moving = 0
 
-        elif attack_type == "BIAS" and cycle in range(attack_start, attack_end):
-            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
-
         elif attack_type == "SURGE" and cycle in range(attack_start, attack_end):
             noisy_state["ThresTemp"] = 120
 
+        elif attack_type == "BIAS" and cycle in range(attack_start, attack_end):
+            bias = random.choice(Config.BIAS_SELECTION)
+            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + bias
+
         elif attack_type == "RANDOM" and cycle in range(attack_start, attack_end):
-            BIAS_VALUE:int = random.randint(-30,30)
-            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + BIAS_VALUE
+            bias = random.randint(-30,30)
+            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + bias
 
         else:
             launched = False
 
         return launched, state, noisy_state
 
-    def simulate(self, state: ElevatorState, cycles: int=10,
-                 attack_type: str="NONE", attack_start: int=1, attack_end: int=100
+    def simulate(
+        self,
+        state: ElevatorState,
+        cycles: int=10,
+        attack_type: str="NONE",
+        attack_start: int=1,
+        attack_end: int=100
     ):
         num_attacks = 0
-        BIAS_VALUE:int = random.choice(Config.BIAS_SELECTION)
         temps: List[int] = []               # Temperature values under normal operation
         weights: List[int] = []             # Temperature values under noise
         readings: List[dict] = []           # state of the system for the current simulation cycle
@@ -217,7 +221,7 @@ class Elevator:
                     state.ButtonLevel2 = 1
 
             payload = {'attack_type': attack_type, 'attack_start': attack_start, 'attack_end': attack_end}
-            attacked, state, noisy_state = self.launch_attack(payload, cycle, BIAS_VALUE, state, noisy_state)
+            attacked, state, noisy_state = self.launch_attack(payload, cycle, state, noisy_state)
             num_attacks += int(attacked)
 
             temps.append(state.ThresTemp)
