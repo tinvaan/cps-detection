@@ -69,7 +69,7 @@ class Elevator:
             "weight": state.weight + noise["weight"],
         }
 
-    def update(self, state: ElevatorState, noisy_state: ElevatorState):
+    def update(self, state: ElevatorState, noise: ElevatorState):
         is_value_changed = False
 
         if state.weight > 0:
@@ -119,7 +119,7 @@ class Elevator:
                 state.currentLevel = 2
                 state.movingToLevel2 = 0
 
-        if state.moving and (state.fireAlarm or noisy_state["overweight_alarm"]):
+        if state.moving and (state.fireAlarm or noise["overweight_alarm"]):
             state.moving = 0
 
         if not state.moving:
@@ -147,13 +147,7 @@ class Elevator:
         state.ButtonLevel1 = 0
         state.ButtonLevel2 = 0
 
-    def launch_attack(
-        self,
-        attack: dict,
-        cycle: int,
-        state: ElevatorState,
-        noisy_state: ElevatorState,
-    ) -> int:
+    def launch_attack(self, attack, cycle, state, noise):
         launched = True
         attack_end = attack.get('attack_end')
         attack_type = attack.get('attack_type')
@@ -183,20 +177,20 @@ class Elevator:
                     state.moving = 0
 
         elif attack_type == "SURGE" and cycle in range(attack_start, attack_end):
-            noisy_state["ThresTemp"] = 120
+            noise["ThresTemp"] = 120
 
         elif attack_type == "BIAS" and cycle in range(attack_start, attack_end):
             bias = random.choice(Config.BIAS_SELECTION)
-            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + bias
+            noise["ThresTemp"] = noise["ThresTemp"] + bias
 
         elif attack_type == "RANDOM" and cycle in range(attack_start, attack_end):
             bias = random.randint(-30,30)
-            noisy_state["ThresTemp"] = noisy_state["ThresTemp"] + bias
+            noise["ThresTemp"] = noise["ThresTemp"] + bias
 
         else:
             launched = False
 
-        return launched, state, noisy_state
+        return launched, state, noise
 
     def simulate(
         self,
@@ -212,7 +206,7 @@ class Elevator:
         readings: List[dict] = []           # state of the system for the current simulation cycle
 
         for cycle in range(cycles):
-            noisy_state = self.get_noisy_elevator_state(state)
+            noise = self.get_noisy_elevator_state(state)
 
             if not state.moving and random.randint(1, 10) == 1:
                 if random.randint(1, 2) == 1:
@@ -221,7 +215,7 @@ class Elevator:
                     state.ButtonLevel2 = 1
 
             payload = {'attack_type': attack_type, 'attack_start': attack_start, 'attack_end': attack_end}
-            attacked, state, noisy_state = self.launch_attack(payload, cycle, state, noisy_state)
+            attacked, state, noise = self.launch_attack(payload, cycle, state, noise)
             num_attacks += int(attacked)
 
             temps.append(state.ThresTemp)
@@ -233,15 +227,15 @@ class Elevator:
                 "currentLevel": state.currentLevel,
                 "ButtonLevel1": state.ButtonLevel1,
                 "ButtonLevel2": state.ButtonLevel2,
-                "moving": noisy_state["moving"],
-                "weight": noisy_state["weight"],
-                "temp": noisy_state["ThresTemp"],
-                "fire_alarm": noisy_state["fire_alarm"],
-                "movingToLevel1": noisy_state["movingToLevel1"],
-                "movingToLevel2": noisy_state["movingToLevel2"],
-                "overweight_alarm": noisy_state["overweight_alarm"],
+                "moving": noise["moving"],
+                "weight": noise["weight"],
+                "temp": noise["ThresTemp"],
+                "fire_alarm": noise["fire_alarm"],
+                "movingToLevel1": noise["movingToLevel1"],
+                "movingToLevel2": noise["movingToLevel2"],
+                "overweight_alarm": noise["overweight_alarm"],
             })
-            self.update(state, noisy_state)
+            self.update(state, noise)
 
         return num_attacks, temps, weights, readings
 
