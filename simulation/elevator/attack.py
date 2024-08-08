@@ -14,7 +14,7 @@ def run():
     attacks, ex = 0, Elevator()
 
     begin = timer()
-    for run in range(Config.RUNS):
+    for run in range(Config.SIMULATION_RUNS):
         print(f"\n******  Simulation Run #{run + 1} *****")
         sensors, actuators, attack_type, detection = ex.attack()
         df = pd.DataFrame(actuators)

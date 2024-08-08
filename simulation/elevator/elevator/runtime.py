@@ -23,9 +23,9 @@ class Config:
     # Elevator initial values
     MAX_TEMP = 100
     MAX_WEIGHT = 1200
-    SIMULATION_TIME = 500
     INITIAL_CURRENT_LEVEL = 1
-    RUNS = int(os.getenv('SIM_RUNS', 10))
+    SIMULATION_RUNS = int(os.getenv('SIM_RUNS', 10))                # Number of times simulation is run
+    SIMULATION_ROUNDS = int(os.getenv('SIM_ROUNDS', 500))           # Number of samples generated
 
     ATTACK_TYPES = [
         "NONE",

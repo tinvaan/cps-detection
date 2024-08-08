@@ -253,7 +253,7 @@ class Elevator:
         duration = random.randint(1, 100)
         end = start + duration
 
-        num_attacks, temps, weights, readings = self.run(Config.SIMULATION_TIME, category, start, end)
+        num_attacks, temps, weights, readings = self.run(Config.SIMULATION_ROUNDS, category, start, end)
 
         # TODO: Clear this out completely
         # detection_status = ["benign"] * len(readings)
