@@ -24,7 +24,7 @@ class ChangeDetector:
         params={'drift': 0, 'threshold': 0},
         meta={'attacks': 0, 'category': None, 'property': None}
     ):
-        spikes = []
+        spikes = []                 # TODO: Use or remove
         hits, misses = 0, 0
         pos, neg = [0], [0]
         drift, threshold = params.get('drift'), params.get('threshold')
@@ -41,17 +41,20 @@ class ChangeDetector:
                 hits += 1 if meta.get('category') != 'NONE' else 0
                 misses += 1 if meta.get('category') == 'NONE' else 0
 
-        return {
-            'detected': hits,
-            'false_detects': misses,
+        found = {
             'samples': len(standard),
             'attacks': meta.get('attacks'),
             'category': meta.get('category'),
-            'false_detects_ratio': ('N/A' if meta.get('attacks') == 0
-                                        else min(100, (misses / meta.get('attacks')) * 100)),
-            'detection_effectiveness': ('N/A' if meta.get('attacks') == 0
-                                            else min(100, (hits / meta.get('attacks')) * 100))
+            'detected': min(hits, meta.get('attacks')),
+            'false_alarms': misses if hits <= meta.get('attacks') else misses + abs(hits - meta.get('attacks'))
         }
+        found['detection_effectiveness'] = round(
+            (found.get('detected') / max(1, found.get('attacks'))) * 100.0, 2)
+
+        found['false_alarm_rate'] = round(
+            (found.get('false_alarms') /
+             max(1, (found.get('samples') - found.get('attacks')))) * 100.0, 2)
+        return found
 
     def run(self, sensor='temp'):
         runtime.setup()
