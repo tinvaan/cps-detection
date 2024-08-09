@@ -200,10 +200,9 @@ class Elevator:
         attack_start: int=1,
         attack_end: int=100
     ):
-        num_attacks = 0
         temps: List[int] = []               # Temperature values under normal operation
         weights: List[int] = []             # Temperature values under noise
-        readings: List[dict] = []           # state of the system for the current simulation cycle
+        simulations: List[dict] = []        # state of the system for the current simulation cycle
 
         for cycle in range(rounds):
             noise = self.get_noisy_elevator_state(state)
@@ -216,17 +215,18 @@ class Elevator:
 
             payload = {'attack_type': attack_type, 'attack_start': attack_start, 'attack_end': attack_end}
             attacked, state, noise = self.launch_attack(payload, cycle, state, noise)
-            num_attacks += int(attacked)
 
             temps.append(state.ThresTemp)
             weights.append(state.weight)
-            readings.append({
+            simulations.append({
                 "MAX_TEMP": state.MAX_TEMP,
                 "MAX_WEIGHT": state.MAX_WEIGHT,
                 "doorOpen": state.doorOpen,
                 "currentLevel": state.currentLevel,
                 "ButtonLevel1": state.ButtonLevel1,
                 "ButtonLevel2": state.ButtonLevel2,
+                "cycle": cycle,
+                "attacked": attacked,
                 "moving": noise["moving"],
                 "weight": noise["weight"],
                 "temp": noise["ThresTemp"],
@@ -237,7 +237,7 @@ class Elevator:
             })
             self.update(state, noise)
 
-        return num_attacks, temps, weights, readings
+        return temps, weights, simulations
 
     def attack(self):
         """
@@ -249,8 +249,8 @@ class Elevator:
         duration = random.randint(1, 100)
         category = random.choice(Config.ATTACK_TYPES)
 
-        num_attacks, temps, weights, readings = self.simulate(ElevatorState(),
-                                                              rounds, category, start, start + duration)
+        temps, weights, simulations = self.simulate(ElevatorState(),
+                                                    rounds, category, start, start + duration)
 
         # TODO: Clear this out completely
         # detection_status = ["benign"] * len(readings)
@@ -262,4 +262,4 @@ class Elevator:
         #            title=(category, False), detection_status=detection_status)
 
         # TODO: Clear out the `detection_status`
-        return num_attacks, category, temps, weights, readings # , detection_status
+        return category, temps, weights, simulations # , detection_status

@@ -22,7 +22,7 @@ class ChangeDetector:
         standard,
         observed,
         params={'drift': 0, 'threshold': 0},
-        meta={'attacks': 0, 'category': None, 'property': None}
+        meta={'attacks': {}, 'category': None, 'property': None}
     ):
         spikes = []                 # TODO: Use or remove
         hits, misses = 0, 0
@@ -41,19 +41,14 @@ class ChangeDetector:
                 hits += 1 if meta.get('category') != 'NONE' else 0
                 misses += 1 if meta.get('category') == 'NONE' else 0
 
-        found = {
-            'samples': len(standard),
-            'attacks': meta.get('attacks'),
-            'category': meta.get('category'),
-            'detected': min(hits, meta.get('attacks')),
-            'false_alarms': misses if hits <= meta.get('attacks') else misses + abs(hits - meta.get('attacks'))
-        }
-        found['detection_effectiveness'] = round(
-            (found.get('detected') / max(1, found.get('attacks'))) * 100.0, 2)
-
-        found['false_alarm_rate'] = round(
-            (found.get('false_alarms') /
-             max(1, (found.get('samples') - found.get('attacks')))) * 100.0, 2)
+        found = {'samples': len(standard), 'category': meta.get('category')}
+        found['attacks'] = len(meta.get('attacks', []))
+        found['detected'] = min(hits, found.get('attacks'))
+        found['false_alarms'] = misses if hits <= found.get('attacks') else misses + abs(hits - found.get('attacks'))
+        found['detection_effectiveness'] = round((found.get('detected') /
+                                                  max(1, found.get('attacks'))) * 100.0, 2)
+        found['false_alarm_rate'] = round((found.get('false_alarms') /
+                                           max(1, (found.get('samples') - found.get('attacks')))) * 100.0, 2)
         return found
 
     def run(self, sensor='temp'):
@@ -67,12 +62,17 @@ class ChangeDetector:
         for drift, threshold in itertools.product(drifts, thresholds):
             sim = Elevator()
             for cycle in tqdm(range(Config.SIMULATION_RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
-                num_attacks, category, temps, weights, readings = sim.attack()
+                category, temps, weights, readings = sim.attack()
+                attacks = {rnd: [] for rnd in range(Config.SIMULATION_ROUNDS)}
+                for state in readings:
+                    if state.get('attacked', False):
+                        attacks[cycle] = attacks.get(cycle) + [state.get('cycle')]
+
                 defects = self.cusum(
                     temps if sensor == 'temp' else weights,
                     [r.get(sensor or 'temp') for r in readings],
                     {'drift': drift, 'threshold': threshold},
-                    {'property': 'temp', 'attacks': num_attacks, 'category': category}
+                    {'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
                 )
                 defects.update({'round': cycle, 'drift': drift, 'threshold': threshold})
                 summary.append(defects)
@@ -139,6 +139,7 @@ class ChangeWriter:
                 pass
 
         return pd.DataFrame(summary)
+
 
 if __name__ == "__main__":
     A = argparse.ArgumentParser()
