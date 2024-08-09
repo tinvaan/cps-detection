@@ -71,7 +71,7 @@ class ChangeDetector:
                     {'drift': drift, 'threshold': threshold},
                     {'property': 'temp', 'attacks': num_attacks, 'category': category}
                 )
-                defects.update({'cycle': cycle, 'drift': drift, 'threshold': threshold})
+                defects.update({'round': cycle, 'drift': drift, 'threshold': threshold})
                 summary.append(defects)
 
         self.duration = timer() - begin
@@ -83,6 +83,18 @@ class ChangeDetector:
 class ChangeWriter:
     def __init__(self, data: dict):
         self.changes = self.process(data)
+        self.changes = self.changes[[
+            'round',
+            'category',
+            'drift',
+            'threshold',
+            'samples',
+            'attacks',
+            'detected',
+            'detection_effectiveness',
+            'false_alarms',
+            'false_alarm_rate'
+        ]]
 
     def get(self, category, sort=None):
         if category not in Config.ATTACK_TYPES:
@@ -106,15 +118,18 @@ class ChangeWriter:
                 detected = record.get('detected')
                 falseDetects = record.get('false_detects')
 
+                if attacks == 0 and detected > attacks:
+                    falseDetects += abs(attacks - detected)
+
                 if attacks > 0 and detected > attacks:
                     falseDetects += abs(attacks - detected)
                     detected = attacks
 
                 record.update({
                     'detected': detected,
-                    'false_detects': falseDetects,
-                    'detects_ratio': float(100) if attacks == 0 else (detected / attacks) * 100,
-                    'false_detects_ratio': float(0) if (total - attacks) == 0 else (falseDetects / (total - attacks)) * 100
+                    'false_alarms': falseDetects,
+                    'detection_effectiveness': float(100) if attacks == 0 else (detected / attacks) * 100,
+                    'false_alarm_rate': float(0) if (total - attacks) == 0 else (falseDetects / (total - attacks)) * 100
                 })
                 summary[idx] = record
             except Exception:
