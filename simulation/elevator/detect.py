@@ -129,6 +129,6 @@ if __name__ == "__main__":
     A.add_argument("-m", "--metric", help="detection metric", default='detection_effectiveness')
     args = A.parse_args()
 
-    defects, duration = ChangeDetector().run()
+    defects, duration = ChangeDetector().run(args.sensor)
     print(ChangeWriter(defects).get(args.attack, args.metric))
     print(f"\nTime elapsed: {duration} seconds")
