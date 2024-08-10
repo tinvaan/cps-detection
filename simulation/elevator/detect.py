@@ -3,6 +3,7 @@ import argparse
 import itertools
 import os
 import pandas as pd
+import random
 
 from time import perf_counter as timer
 from tqdm import tqdm
@@ -51,7 +52,7 @@ class ChangeDetector:
                                            max(1, (found.get('samples') - found.get('attacks')))) * 100.0, 2)
         return found
 
-    def run(self, sensor='temp'):
+    def run(self, sensor='temp', category=random.choice(Config.ATTACK_TYPES)):
         runtime.setup()
 
         summary = []
@@ -63,7 +64,7 @@ class ChangeDetector:
         for drift, threshold in itertools.product(drifts, thresholds):
             sim = Elevator()
             for cycle in tqdm(range(Config.SIMULATION_RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
-                category, temps, weights, readings = sim.attack()
+                category, temps, weights, readings = sim.attack(category)
                 for state in readings:
                     if state.get('attacked', False):
                         attacks[cycle] = attacks.get(cycle, []) + [state.get('cycle')]
@@ -98,13 +99,13 @@ class ChangeWriter:
             'false_alarm_rate'
         ]]
 
-    def get(self, category, single=True):
+    def get(self, category, best=False):
         if category not in Config.ATTACK_TYPES:
             return self.changes
 
         rows = self.changes.loc[self.changes.category == category]
         rows = rows.sort_values(by='detection_effectiveness', ascending=False)
-        if single:
+        if best:
             rows = rows[rows['detection_effectiveness'] == rows['detection_effectiveness'].max()]
             rows = rows[rows['false_alarm_rate'] == rows['false_alarm_rate'].min()]
         return rows
@@ -151,6 +152,6 @@ if __name__ == "__main__":
     A.add_argument("-s", "--sensor", help="target system sensor", default='temp')
     args = A.parse_args()
 
-    defects, duration = ChangeDetector().run(args.sensor)
+    defects, duration = ChangeDetector().run(args.sensor, args.attack)
     print(ChangeWriter(defects).get(args.attack))
     print(f"\nTime elapsed: {duration} seconds")

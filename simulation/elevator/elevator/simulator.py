@@ -240,15 +240,13 @@ class Elevator:
 
         return temps, weights, simulations
 
-    def attack(self):
+    def attack(self, category):
         """
         Determine the simulation parameters mainly to determine
         whether there is an intermediate function of the attack
         """
-        category = random.choice(Config.ATTACK_TYPES)
         start = random.randint(0, Config.SIMULATION_ROUNDS)
         duration = random.randint(1, Config.SIMULATION_ROUNDS)
-
         temps, weights, simulations = self.simulate(ElevatorState(), Config.SIMULATION_ROUNDS,
                                                     category, start, start + duration)
 
