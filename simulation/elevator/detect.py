@@ -57,13 +57,13 @@ class ChangeDetector:
         summary = []
         thresholds = [2, 4, 6, 8]
         drifts = [0.1, 0.3, 0.5, 0.7, 0.9]
+        attacks = {rnd: [] for rnd in range(Config.SIMULATION_ROUNDS)}
 
         begin = timer()
         for drift, threshold in itertools.product(drifts, thresholds):
             sim = Elevator()
             for cycle in tqdm(range(Config.SIMULATION_RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
                 category, temps, weights, readings = sim.attack()
-                attacks = {rnd: [] for rnd in range(Config.SIMULATION_ROUNDS)}
                 for state in readings:
                     if state.get('attacked', False):
                         attacks[cycle] = attacks.get(cycle) + [state.get('cycle')]

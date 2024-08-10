@@ -161,12 +161,10 @@ class Elevator:
             noise["ThresTemp"] = 120
 
         elif attack_type == "BIAS":
-            bias = random.choice(Config.BIAS_SELECTION)
-            noise["ThresTemp"] = noise["ThresTemp"] + bias
+            noise["ThresTemp"] = noise["ThresTemp"] + random.choice(Config.BIAS_SELECTION)
 
         elif attack_type == "RANDOM":
-            bias = random.randint(-30, 30)
-            noise["ThresTemp"] = noise["ThresTemp"] + bias
+            noise["ThresTemp"] = noise["ThresTemp"] + random.randint(-30, 30)
 
         elif attack_type == "ATTACK_MAX_TEMP":
             state.MAX_TEMP = 20
