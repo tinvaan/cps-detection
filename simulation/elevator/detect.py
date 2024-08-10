@@ -75,7 +75,9 @@ class ChangeDetector:
                     {'drift': drift, 'threshold': threshold},
                     {'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
                 )
-                defects.update({'round': cycle, 'drift': drift, 'threshold': threshold})
+                defects.update({
+                    'round': cycle, 'drift': drift, 'threshold': threshold, 'attack_points': attacks.get(cycle)
+                })
                 summary.append(defects)
 
         self.duration = timer() - begin
@@ -93,6 +95,8 @@ class ChangeWriter:
             'threshold',
             'samples',
             'attacks',
+            'attack_points',
+            'change_points',
             'detected',
             'false_alarms',
             'detection_effectiveness',
