@@ -24,7 +24,7 @@ class ChangeDetector:
         params={'drift': 0, 'threshold': 0},
         meta={'attacks': {}, 'category': None, 'property': None}
     ):
-        spikes = []                 # TODO: Use or remove
+        spikes = []
         hits, misses = 0, 0
         pos, neg = [0], [0]
         drift, threshold = params.get('drift'), params.get('threshold')
@@ -41,7 +41,7 @@ class ChangeDetector:
                 hits += 1 if meta.get('category') != 'NONE' else 0
                 misses += 1 if meta.get('category') == 'NONE' else 0
 
-        found = {'samples': len(standard), 'category': meta.get('category')}
+        found = {'samples': len(standard), 'category': meta.get('category'), 'change_points': spikes}
         found['attacks'] = len(meta.get('attacks', []))
         found['detected'] = min(hits, found.get('attacks'))
         found['false_alarms'] = misses if hits <= found.get('attacks') else misses + abs(hits - found.get('attacks'))
