@@ -42,7 +42,7 @@ class ChangeDetector:
                 misses += 1 if meta.get('category') == 'NONE' else 0
 
         found = {'samples': len(standard), 'category': meta.get('category'), 'change_points': spikes}
-        found['attacks'] = len(meta.get('attacks', []))
+        found['attacks'] = len(meta.get('attacks', []) or [])
         found['detected'] = min(hits, found.get('attacks'))
         found['false_alarms'] = misses if hits <= found.get('attacks') else misses + abs(hits - found.get('attacks'))
         found['detection_effectiveness'] = round((found.get('detected') /
@@ -66,7 +66,7 @@ class ChangeDetector:
                 category, temps, weights, readings = sim.attack()
                 for state in readings:
                     if state.get('attacked', False):
-                        attacks[cycle] = attacks.get(cycle) + [state.get('cycle')]
+                        attacks[cycle] = attacks.get(cycle, []) + [state.get('cycle')]
 
                 defects = self.cusum(
                     temps if sensor == 'temp' else weights,
