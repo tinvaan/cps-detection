@@ -30,20 +30,25 @@ class ChangeDetector:
         pos, neg = [0], [0]
         drift, threshold = params.get('drift'), params.get('threshold')
 
-        for idx, (std, obs) in enumerate(zip(standard, observed)):
+        for ts, (std, obs) in enumerate(zip(standard, observed)):
             deviation = abs(std - obs)
             pos.append(max(0, pos[-1] + deviation - drift))
             neg.append(max(0, neg[-1] - deviation - drift))
 
             if pos[-1] > threshold or neg[-1] > threshold:
-                spikes.append(idx)
+                spikes.append(ts)
                 pos[-1], neg[-1] = 0, 0
 
                 hits += 1 if meta.get('category') != 'NONE' else 0
                 misses += 1 if meta.get('category') == 'NONE' else 0
 
-        found = {'samples': len(standard), 'category': meta.get('category'), 'change_points': spikes}
-        found['attacks'] = len(meta.get('attacks', []) or [])
+        found = {
+            'category': meta.get('category'),
+            'samples': len(standard),
+            'attacks': len(meta.get('attacks', []) or []),
+            'attack_points': meta.get('attacks', []) or [],
+            'change_points': spikes,
+        }
         found['detected'] = min(hits, found.get('attacks'))
         found['false_alarms'] = misses if hits <= found.get('attacks') else misses + abs(hits - found.get('attacks'))
         found['detection_effectiveness'] = round((found.get('detected') /
