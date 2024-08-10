@@ -152,8 +152,23 @@ class Elevator:
         attack_end = attack.get('attack_end')
         attack_type = attack.get('attack_type')
         attack_start = attack.get('attack_start')
+        attack_window = range(attack_start, attack_end)
 
-        if attack_type == "ATTACK_MAX_TEMP":
+        if cycle not in attack_window:
+            return False, state, noise
+
+        if attack_type == "SURGE":
+            noise["ThresTemp"] = 120
+
+        elif attack_type == "BIAS":
+            bias = random.choice(Config.BIAS_SELECTION)
+            noise["ThresTemp"] = noise["ThresTemp"] + bias
+
+        elif attack_type == "RANDOM":
+            bias = random.randint(-30, 30)
+            noise["ThresTemp"] = noise["ThresTemp"] + bias
+
+        elif attack_type == "ATTACK_MAX_TEMP":
             state.MAX_TEMP = 20
 
         elif attack_type == "ATTACK_MAX_WEIGHT":
@@ -175,18 +190,6 @@ class Elevator:
                 else:
                     state.movingToLevel2 = 0
                     state.moving = 0
-
-        elif attack_type == "SURGE" and cycle in range(attack_start, attack_end):
-            noise["ThresTemp"] = 120
-
-        elif attack_type == "BIAS" and cycle in range(attack_start, attack_end):
-            bias = random.choice(Config.BIAS_SELECTION)
-            noise["ThresTemp"] = noise["ThresTemp"] + bias
-
-        elif attack_type == "RANDOM" and cycle in range(attack_start, attack_end):
-            bias = random.randint(-30,30)
-            noise["ThresTemp"] = noise["ThresTemp"] + bias
-
         else:
             launched = False
 
@@ -198,7 +201,7 @@ class Elevator:
         rounds: int,
         attack_type: str="NONE",
         attack_start: int=1,
-        attack_end: int=100
+        attack_end: int=Config.SIMULATION_ROUNDS
     ):
         temps: List[int] = []               # Temperature values under normal operation
         weights: List[int] = []             # Temperature values under noise
@@ -244,13 +247,12 @@ class Elevator:
         Determine the simulation parameters mainly to determine
         whether there is an intermediate function of the attack
         """
-        rounds = Config.SIMULATION_ROUNDS
-        start = random.randint(0, 300)
-        duration = random.randint(1, 100)
         category = random.choice(Config.ATTACK_TYPES)
+        start = random.randint(0, Config.SIMULATION_ROUNDS)
+        duration = random.randint(1, Config.SIMULATION_ROUNDS)
 
-        temps, weights, simulations = self.simulate(ElevatorState(),
-                                                    rounds, category, start, start + duration)
+        temps, weights, simulations = self.simulate(ElevatorState(), Config.SIMULATION_ROUNDS,
+                                                    category, start, start + duration)
 
         # TODO: Clear this out completely
         # detection_status = ["benign"] * len(readings)
