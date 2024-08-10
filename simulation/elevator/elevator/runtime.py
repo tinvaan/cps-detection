@@ -3,14 +3,18 @@ import os
 import shutil
 
 
-def setup():
+def setup(dirs=False):
     """ Prepare the directory structure """
-    if os.path.exists('runs'):
-        shutil.rmtree('runs/')
+    sims = os.path.join(os.path.dirname(__file__), "../..")
+    runs = os.path.join(sims, "runs")
+    if os.path.exists(runs):
+        shutil.rmtree(runs)
 
-    os.makedirs("runs")
-    for attack in Config.ATTACK_TYPES:
-        os.makedirs(f"runs/ATTACK_TYPE_{attack}")
+    os.makedirs(runs)
+    if dirs:
+        for attack in Config.ATTACK_TYPES:
+            os.makedirs(os.path.join(runs, f"ATTACK_TYPE_{attack}"))
+    return runs
 
 
 class Config:

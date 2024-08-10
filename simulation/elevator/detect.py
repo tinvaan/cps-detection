@@ -1,10 +1,10 @@
 
 import argparse
 import itertools
-import os
 import pandas as pd
 import random
 
+from os import path
 from time import perf_counter as timer
 from tqdm import tqdm
 
@@ -82,6 +82,7 @@ class ChangeDetector:
 
         self.duration = timer() - begin
         self.writer = ChangeWriter(summary)
+        self.writer.log()
         return self.writer.changes, self.duration
 
 
@@ -116,13 +117,11 @@ class ChangeWriter:
                    .loc[rows['false_alarm_rate'] < Config.MAX_FALSE_ALARM_RATE]\
                    .sort_values(by='detection_effectiveness', ascending=False)
 
-
-    def log(self, run, values, states, attack_type, detections):
-        df = pd.DataFrame(states)
-        df.update({'attack': attack_type, 'detection': detections})
-
-        mode = "a" if run > 0 or (os.path.exists("runs/results.csv") and os.path.getsize("runs/results.csv") != 0) else "w"
-        df.to_csv("runs/results.csv", mode=mode, index=False, header=not os.path.exists("runs/results.csv"))
+    def log(self):
+        runs = runtime.setup()
+        fname = path.join(runs, "results.csv")
+        mode = "a" if (path.exists(fname) and path.getsize(fname) != 0) else "w"
+        self.changes.to_csv(fname, mode=mode, index=False, header=not path.exists(fname))
 
     def process(self, summary):
         for idx, record in enumerate(summary):
