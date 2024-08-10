@@ -98,12 +98,17 @@ class ChangeWriter:
             'false_alarm_rate'
         ]]
 
-    def get(self, category, sort=None):
+    def get(self, category, single=True):
         if category not in Config.ATTACK_TYPES:
             return self.changes
 
         rows = self.changes.loc[self.changes.category == category]
-        return rows if not sort else rows.sort_values(by=sort, ascending=False)
+        rows = rows.sort_values(by='detection_effectiveness', ascending=False)
+        if single:
+            rows = rows[rows['detection_effectiveness'] == rows['detection_effectiveness'].max()]
+            rows = rows[rows['false_alarm_rate'] == rows['false_alarm_rate'].min()]
+        return rows
+
 
     def log(self, run, values, states, attack_type, detections):
         df = pd.DataFrame(states)
@@ -144,9 +149,8 @@ if __name__ == "__main__":
     A = argparse.ArgumentParser()
     A.add_argument("-a", "--attack", help="target attack category")
     A.add_argument("-s", "--sensor", help="target system sensor", default='temp')
-    A.add_argument("-m", "--metric", help="detection metric", default='detection_effectiveness')
     args = A.parse_args()
 
     defects, duration = ChangeDetector().run(args.sensor)
-    print(ChangeWriter(defects).get(args.attack, args.metric))
+    print(ChangeWriter(defects).get(args.attack))
     print(f"\nTime elapsed: {duration} seconds")
