@@ -82,7 +82,6 @@ class ChangeDetector:
         return self.writer.changes, self.duration
 
 
-
 class ChangeWriter:
     def __init__(self, data: dict):
         self.changes = self.process(data)
