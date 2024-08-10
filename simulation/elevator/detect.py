@@ -94,8 +94,8 @@ class ChangeWriter:
             'samples',
             'attacks',
             'detected',
-            'detection_effectiveness',
             'false_alarms',
+            'detection_effectiveness',
             'false_alarm_rate'
         ]]
 
