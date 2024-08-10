@@ -104,11 +104,13 @@ class ChangeWriter:
             return self.changes
 
         rows = self.changes.loc[self.changes.category == category]
-        rows = rows.sort_values(by='detection_effectiveness', ascending=False)
         if best:
             rows = rows[rows['detection_effectiveness'] == rows['detection_effectiveness'].max()]
             rows = rows[rows['false_alarm_rate'] == rows['false_alarm_rate'].min()]
-        return rows
+
+        return rows.loc[rows['detection_effectiveness'] > Config.MIN_DETECTION_EFFECTIVENESS]\
+                   .loc[rows['false_alarm_rate'] < Config.MAX_FALSE_ALARM_RATE]\
+                   .sort_values(by='detection_effectiveness', ascending=False)
 
 
     def log(self, run, values, states, attack_type, detections):
@@ -156,5 +158,4 @@ if __name__ == "__main__":
     defects = ChangeWriter(defects).get(args.attack)
 
     print(defects)
-    import ipdb; ipdb.set_trace()
-    print(f"\nTime elapsed: {duration} seconds")
+    print(f"\ntime elapsed: {duration} seconds")
