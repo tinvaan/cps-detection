@@ -55,8 +55,8 @@ class ChangeDetector:
         runtime.setup()
 
         summary = []
-        thresholds = [2, 4, 6, 8]
-        drifts = [0.1, 0.3, 0.5, 0.7, 0.9]
+        thresholds = [4, 6, 8]
+        drifts = [0.3, 0.5, 0.7, 0.9]
         attacks = {rnd: [] for rnd in range(Config.SIMULATION_ROUNDS)}
 
         begin = timer()
