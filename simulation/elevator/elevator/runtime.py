@@ -18,7 +18,7 @@ class Config:
     DEBUG = True
     SAVE_PLOTS = True
     SHOW_PLOTS = False
-    BIAS_SELECTION = list(range(-17,-14)) + list(range(14,17))
+    BIAS_SELECTION = list(range(-17, -14)) + list(range(14, 17))
 
     # Elevator initial values
     MAX_TEMP = 100
