@@ -153,5 +153,8 @@ if __name__ == "__main__":
     args = A.parse_args()
 
     defects, duration = ChangeDetector().run(args.sensor, args.attack)
-    print(ChangeWriter(defects).get(args.attack))
+    defects = ChangeWriter(defects).get(args.attack)
+
+    print(defects)
+    import ipdb; ipdb.set_trace()
     print(f"\nTime elapsed: {duration} seconds")
