@@ -13,15 +13,38 @@ from elevator.runtime import Config
 from elevator.simulator import Elevator
 
 
+class StateInspector:
+    def verify(self, state):
+        try:
+            assert state.get('weight') < state.get('MAX_WEIGHT'), "Weight exceeds threshold"
+            assert state.get('temp') < state.get('MAX_TEMP'), "Temperature exceeds threshold"
+
+            if bool(state.get('fire_alarm', False)):
+                assert state.get('temp') > state.get('MAX_TEMP'),\
+                       "Fire alarm raised when temprature is within thresholds"
+
+            if bool(state.get('overweight_alarm', False)):
+                assert state.get('weight') > state.get('MAX_WEIGHT'),\
+                       "Weight alarm raised when wieght is within thresholds"
+        except AssertionError as err:
+            # tqdm.write(err.args[0])
+            return False
+
+        return True
+
+
 class ChangeDetector:
     def __init__(self):
         self.duration = -1          # Elapsed time
         self.writer = None          # ChangeWriter instance
+        self.inspector = StateInspector()
 
     def cusum(
         self,
         standard,
         observed,
+        readings,
+        verify_state=True,
         params={'drift': 0, 'threshold': 0},
         meta={'attacks': {}, 'category': None, 'property': None}
     ):
@@ -30,17 +53,18 @@ class ChangeDetector:
         pos, neg = [0], [0]
         drift, threshold = params.get('drift'), params.get('threshold')
 
-        for ts, (std, obs) in enumerate(zip(standard, observed)):
+        for ts, (std, obs, state) in enumerate(zip(standard, observed, readings)):
             deviation = abs(std - obs)
             pos.append(max(0, pos[-1] + deviation - drift))
             neg.append(max(0, neg[-1] - deviation - drift))
 
             if pos[-1] > threshold or neg[-1] > threshold:
-                spikes.append(ts)
-                pos[-1], neg[-1] = 0, 0
+                if verify_state and not self.inspector.verify(state):
+                    spikes.append(ts)
+                    pos[-1], neg[-1] = 0, 0
 
-                hits += 1 if meta.get('category') != 'NONE' else 0
-                misses += 1 if meta.get('category') == 'NONE' else 0
+                    hits += 1 if bool(state.get('attacked', False)) else 0
+                    misses += 1 if not bool(state.get('attacked', False)) else 0
 
         found = {
             'category': meta.get('category'),
@@ -77,8 +101,9 @@ class ChangeDetector:
                 defects = self.cusum(
                     temps if sensor == 'temp' else weights,
                     [r.get(sensor or 'temp') for r in readings],
-                    {'drift': drift, 'threshold': threshold},
-                    {'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
+                    readings,
+                    params={'drift': drift, 'threshold': threshold},
+                    meta={'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
                 )
                 defects.update({
                     'round': cycle, 'drift': drift, 'threshold': threshold, 'attack_points': attacks.get(cycle)
