@@ -31,8 +31,8 @@ class Config:
     SIMULATION_RUNS = int(os.getenv('SIM_RUNS', 10))                # Number of times simulation is run
     SIMULATION_ROUNDS = int(os.getenv('SIM_ROUNDS', 500))           # Number of samples generated
 
-    MAX_FALSE_ALARM_RATE = float(5)
-    MIN_DETECTION_EFFECTIVENESS = float(95)
+    MAX_FALSE_ALARM_RATE = float(os.getenv('MAX_ALARM', 10))
+    MIN_DETECTION_EFFECTIVENESS = float(os.getenv('MIN_DETECTION', 90))
 
     ATTACK_TYPES = [
         "NONE",
