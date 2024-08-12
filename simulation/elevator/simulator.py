@@ -148,32 +148,39 @@ class Elevator:
         state.ButtonLevel2 = 0
 
     def launch_attack(self, attack, cycle, state, noise):
-        launched = True
-        attack_end = attack.get('attack_end')
-        attack_type = attack.get('attack_type')
-        attack_start = attack.get('attack_start')
-        attack_window = range(attack_start, attack_end)
+        bias, button, surge, rand, max_temp, max_weight = False, False, False, False, False, False
 
+        attack_window = range(attack.get('attack_start'), attack.get('attack_end'))
         if cycle not in attack_window:
-            return False, state, noise
+            return state, noise, False, 0
 
-        if attack_type == "SURGE":
+        attack_type = attack.get('attack_type')
+        attack_types = attack_type.split(',')
+        if '' in attack_types: attack_types.remove('')
+
+        if "SURGE" in attack_types:
+            surge = True
             noise["ThresTemp"] = 120
 
-        elif attack_type == "BIAS":
-            noise["ThresTemp"] = noise["ThresTemp"] + random.choice(Config.BIAS_SELECTION)
+        if "BIAS" in attack_types:
+            bias = True
+            noise["ThresTemp"] += random.choice(Config.BIAS_SELECTION)
 
-        elif attack_type == "RANDOM":
-            noise["ThresTemp"] = noise["ThresTemp"] + random.randint(-30, 30)
+        if "RANDOM" in attack_types:
+            rand = True
+            noise["ThresTemp"] += random.randint(-30, 30)
 
-        elif attack_type == "ATTACK_MAX_TEMP":
+        if "ATTACK_MAX_TEMP" in attack_types:
+            max_temp = True
             state.MAX_TEMP = 20
 
-        elif attack_type == "ATTACK_MAX_WEIGHT":
+        if "ATTACK_MAX_WEIGHT" in attack_types:
+            max_weight = True
             state.MAX_WEIGHT = 10
 
-        elif attack_type == "BUTTON_ATTACK":
+        if "BUTTON_ATTACK" in attack_types:
             if state.ButtonLevel1:
+                button = True
                 if state.currentLevel == 1:
                     state.movingToLevel2 = 1
                     state.moving = 1
@@ -182,16 +189,16 @@ class Elevator:
                     state.moving = 0
 
             elif state.ButtonLevel2:
+                button = True
                 if state.currentLevel == 2:
                     state.movingToLevel1 = 1
                     state.moving = 1
                 else:
                     state.movingToLevel2 = 0
                     state.moving = 0
-        else:
-            launched = False
 
-        return launched, state, noise
+        attacks = [bias, button, surge, rand, max_temp, max_weight]
+        return state, noise, any(attacks), attacks.count(True)
 
     def simulate(
         self,
@@ -215,13 +222,13 @@ class Elevator:
                     state.ButtonLevel2 = 1
 
             payload = {'attack_type': attack_type, 'attack_start': attack_start, 'attack_end': attack_end}
-            attacked, state, noise = self.launch_attack(payload, cycle, state, noise)
+            state, noise, attacked, count = self.launch_attack(payload, cycle, state, noise)
 
             temps.append(state.ThresTemp)
             weights.append(state.weight)
             simulations.append({
                 "cycle": cycle,
-                "attacked": attacked,
+                "attack": {'launched': attacked, 'count': count},
                 "MAX_TEMP": state.MAX_TEMP,
                 "MAX_WEIGHT": state.MAX_WEIGHT,
                 "doorOpen": state.doorOpen,

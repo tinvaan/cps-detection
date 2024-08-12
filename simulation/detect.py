@@ -69,8 +69,10 @@ def cusum(
                 spikes.append(ts)
                 pos[-1], neg[-1] = 0, 0
 
-                hits += 1 if bool(state.get('attacked', False)) else 0
-                misses += 1 if not bool(state.get('attacked', False)) else 0
+                nums, launched = state.get('attack', {}).get('count', 0),\
+                                 bool(state.get('attack', {}).get('launched', False))
+                hits += nums if launched else 0
+                misses += nums if not launched else 0
 
     return analyze({
         'category': meta.get('category'),
