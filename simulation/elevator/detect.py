@@ -11,6 +11,7 @@ from tqdm import tqdm
 from elevator import runtime
 from elevator.runtime import Config
 from elevator.simulator import Elevator
+from elevator.utils import group
 
 
 class StateInspector:
@@ -98,9 +99,7 @@ class ChangeDetector:
                     params={'drift': drift, 'threshold': threshold},
                     meta={'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
                 )
-                defects.update({
-                    'round': cycle, 'drift': drift, 'threshold': threshold, 'attack_points': attacks.get(cycle)
-                })
+                defects.update({'round': cycle, 'drift': drift, 'threshold': threshold})
                 summary.append(defects)
 
         self.duration = timer() - begin
@@ -111,17 +110,9 @@ class ChangeDetector:
     def stats(self, findings, context):
         hits = context.get('hits')
         misses = context.get('misses')
-        attack_points = ([] if len(findings.get('attack_points')) == 0
-                            else [(findings.get('attack_points')[0], findings.get('attack_points')[0])])
-
-        if len(findings.get('attack_points')) > 1:
-            for ts in findings.get('attack_points')[1:]:
-                if ts == attack_points[-1][1] + 1:
-                    attack_points[-1] = (attack_points[-1][0], ts)
-                else:
-                    attack_points.append((ts, ts))
 
         findings['detected'] = min(hits, findings.get('attacks'))
+        findings['attack_points'] = group(findings.get('attack_points', []))
         findings['false_alarms'] = misses if hits <= findings.get('attacks') else misses + abs(hits - findings.get('attacks'))
         findings['detection_effectiveness'] = round((findings.get('detected') /
                                                      max(1, findings.get('attacks'))) * 100.0, 2)
