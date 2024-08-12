@@ -220,14 +220,14 @@ class Elevator:
             temps.append(state.ThresTemp)
             weights.append(state.weight)
             simulations.append({
+                "cycle": cycle,
+                "attacked": attacked,
                 "MAX_TEMP": state.MAX_TEMP,
                 "MAX_WEIGHT": state.MAX_WEIGHT,
                 "doorOpen": state.doorOpen,
                 "currentLevel": state.currentLevel,
                 "ButtonLevel1": state.ButtonLevel1,
                 "ButtonLevel2": state.ButtonLevel2,
-                "cycle": cycle,
-                "attacked": attacked,
                 "moving": noise["moving"],
                 "weight": noise["weight"],
                 "temp": noise["ThresTemp"],
@@ -249,15 +249,4 @@ class Elevator:
         duration = random.randint(1, Config.SIMULATION_ROUNDS)
         temps, weights, simulations = self.simulate(ElevatorState(), Config.SIMULATION_ROUNDS,
                                                     category, start, start + duration)
-
-        # TODO: Clear this out completely
-        # detection_status = ["benign"] * len(readings)
-        # for i in range(len(readings)):
-        #     if readings[i]["MAX_TEMP"] != 100 or readings[i]["MAX_WEIGHT"] != 1200:
-        #         detection_status[i] = "attack"
-
-        # plots.draw(MAX_TEMP, MAX_WEIGHT, sensor_measurements, snapshots,
-        #            title=(category, False), detection_status=detection_status)
-
-        # TODO: Clear out the `detection_status`
-        return category, temps, weights, simulations # , detection_status
+        return category, temps, weights, simulations
