@@ -14,7 +14,7 @@ from simulation.detect import cusum
 from simulation.log import ChangeWriter
 
 
-def run(sensor='temp', category=random.choice(Config.ATTACK_TYPES)):
+def run(sensor, category):
     runtime.setup()
 
     summary = []
@@ -53,8 +53,9 @@ if __name__ == "__main__":
     A.add_argument("-s", "--sensor", help="target system sensor", default='temp')
     args = A.parse_args()
 
-    defects, duration = run(args.sensor, args.attack)
-    defects = ChangeWriter(defects).get(args.attack)
+    category = args.attack or random.choice(Config.ATTACK_TYPES)
+    defects, duration = run(args.sensor or "temp", category)
+    defects = ChangeWriter(defects).get(category)
 
     print(defects)
     print(f"\ntime elapsed: {duration} seconds")
