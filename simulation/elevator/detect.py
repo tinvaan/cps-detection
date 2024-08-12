@@ -66,20 +66,13 @@ class ChangeDetector:
                     hits += 1 if bool(state.get('attacked', False)) else 0
                     misses += 1 if not bool(state.get('attacked', False)) else 0
 
-        found = {
+        return self.stats({
             'category': meta.get('category'),
             'samples': len(standard),
             'attacks': len(meta.get('attacks', []) or []),
             'attack_points': meta.get('attacks', []) or [],
             'change_points': spikes,
-        }
-        found['detected'] = min(hits, found.get('attacks'))
-        found['false_alarms'] = misses if hits <= found.get('attacks') else misses + abs(hits - found.get('attacks'))
-        found['detection_effectiveness'] = round((found.get('detected') /
-                                                  max(1, found.get('attacks'))) * 100.0, 2)
-        found['false_alarm_rate'] = round((found.get('false_alarms') /
-                                           max(1, (found.get('samples') - found.get('attacks')))) * 100.0, 2)
-        return found
+        }, context={'hits': hits, 'misses': misses})
 
     def run(self, sensor='temp', category=random.choice(Config.ATTACK_TYPES)):
         runtime.setup()
@@ -114,6 +107,27 @@ class ChangeDetector:
         self.writer = ChangeWriter(summary)
         self.writer.log()
         return self.writer.changes, self.duration
+
+    def stats(self, findings, context):
+        hits = context.get('hits')
+        misses = context.get('misses')
+        attack_points = ([] if len(findings.get('attack_points')) == 0
+                            else [(findings.get('attack_points')[0], findings.get('attack_points')[0])])
+
+        if len(findings.get('attack_points')) > 1:
+            for ts in findings.get('attack_points')[1:]:
+                if ts == attack_points[-1][1] + 1:
+                    attack_points[-1] = (attack_points[-1][0], ts)
+                else:
+                    attack_points.append((ts, ts))
+
+        findings['detected'] = min(hits, findings.get('attacks'))
+        findings['false_alarms'] = misses if hits <= findings.get('attacks') else misses + abs(hits - findings.get('attacks'))
+        findings['detection_effectiveness'] = round((findings.get('detected') /
+                                                     max(1, findings.get('attacks'))) * 100.0, 2)
+        findings['false_alarm_rate'] = round((findings.get('false_alarms') /
+                                             max(1, (findings.get('samples') - findings.get('attacks')))) * 100.0, 2)
+        return findings
 
 
 class ChangeWriter:
