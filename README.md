@@ -38,8 +38,24 @@ Our aim is to identify defects/anomalies in the simulated data.
 
 ## Usage
 
+Run the `simulation/cli.py` script to run the simulation and launch attacks.
+
 ```shell
-$ python simulation/cli.py --sensor 'temp' --attack 'ATTACK_MAX_WEIGHT'
+$ python simulation/cli.py --help
+usage: cli.py [-h] [-a ATTACK] [-s SENSOR]
+
+options:
+  -h, --help            show this help message and exit
+  -a ATTACK, --attack ATTACK
+                        target attack category
+  -s SENSOR, --sensor SENSOR
+                        target system sensor
+```
+
+Eg: attack the elevator's load sensor.
+
+```shell
+$ python simulation/cli.py --sensor 'weight' --attack 'ATTACK_MAX_WEIGHT'
 
 Cusum(drift=0.3, threshold=4) - : 100%|####################################################################################################################################################################| 10/10 [00:00<00:00, 146.15it/s]
 Cusum(drift=0.3, threshold=6) - : 100%|####################################################################################################################################################################| 10/10 [00:00<00:00, 148.60it/s]
