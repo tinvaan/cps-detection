@@ -28,7 +28,7 @@ def run(sensor='temp', category=random.choice(Config.ATTACK_TYPES)):
         for cycle in tqdm(range(Config.SIMULATION_RUNS), ascii=True, desc=f"Cusum(drift={drift}, threshold={threshold}) - "):
             category, temps, weights, readings = sim.attack(category)
             for state in readings:
-                if state.get('attacked', False):
+                if state.get('attack', {}).get('launched', False):
                     attacks[cycle] = attacks.get(cycle, []) + [state.get('cycle')]
 
             defects = cusum(

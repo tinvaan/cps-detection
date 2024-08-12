@@ -156,7 +156,8 @@ class Elevator:
 
         attack_type = attack.get('attack_type')
         attack_types = attack_type.split(',')
-        if '' in attack_types: attack_types.remove('')
+        if '' in attack_types:
+            attack_types.remove('')
 
         if "SURGE" in attack_types:
             surge = True
