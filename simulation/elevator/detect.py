@@ -113,6 +113,7 @@ class ChangeDetector:
 
         findings['detected'] = min(hits, findings.get('attacks'))
         findings['attack_points'] = group(findings.get('attack_points', []))
+        findings['attacks'] = len(findings.get('attack_points', []))
         findings['false_alarms'] = misses if hits <= findings.get('attacks') else misses + abs(hits - findings.get('attacks'))
         findings['detection_effectiveness'] = round((findings.get('detected') /
                                                      max(1, findings.get('attacks'))) * 100.0, 2)
