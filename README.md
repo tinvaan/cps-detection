@@ -11,7 +11,7 @@ You can run the simulator to generate a dataset depicting various states of the 
 
 Our aim is to identify defects/anomalies in the simulated data.
 
-## Environment
+## Setup
 
 - Set `$PYTHONPATH` to the root directory of the project.
 
@@ -28,6 +28,12 @@ Our aim is to identify defects/anomalies in the simulated data.
     > export SIM_ROUNDS=20
     > export MAX_ALARM=10
     > export MIN_DETECTION=90
+    ```
+
+- Install project requirements
+
+    ```shell
+    > pip install -r requirements.txt
     ```
 
 ## Usage
