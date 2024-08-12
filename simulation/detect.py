@@ -27,7 +27,14 @@ def analyze(changes, context):
 
     attack_duration = changes.get('attack_points', [])
     attack_intervals = group(changes.get('attack_points', []))
-    changes.update({'attacks': len(attack_intervals), 'attack_points': attack_intervals})
+    attack_types = changes.get('category').split(',')
+    if '' in attack_types:
+        attack_types.remove('')
+
+    changes.update({
+        'attack_points': attack_intervals,
+        'attacks': len(attack_intervals) * len(attack_types)
+    })
 
     # If we have detected more attacks than launched, move the residue to false positives
     changes.update({

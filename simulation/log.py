@@ -26,17 +26,18 @@ class ChangeWriter:
         ]]
 
     def get(self, category, best=False):
-        if category not in Config.ATTACK_TYPES:
-            return self.changes
+        if len(category.split(',')) == 1:
+            if category not in Config.ATTACK_TYPES:
+                return self.changes
 
-        rows = self.changes.loc[self.changes.category == category]
+        rs = self.changes.loc[self.changes.category == category]
         if best:
-            rows = rows[rows['detection_effectiveness'] == rows['detection_effectiveness'].max()]
-            rows = rows[rows['false_alarm_rate'] == rows['false_alarm_rate'].min()]
+            rs = rs[rs['detection_effectiveness'] == rs['detection_effectiveness'].max()]
+            rs = rs[rs['false_alarm_rate'] == rs['false_alarm_rate'].min()]
 
-        return rows.loc[rows['detection_effectiveness'] > Config.MIN_DETECTION_EFFECTIVENESS]\
-                   .loc[rows['false_alarm_rate'] < Config.MAX_FALSE_ALARM_RATE]\
-                   .sort_values(by='detection_effectiveness', ascending=False)
+        return rs.loc[rs['detection_effectiveness'] > Config.MIN_DETECTION_EFFECTIVENESS]\
+                 .loc[rs['false_alarm_rate'] < Config.MAX_FALSE_ALARM_RATE]\
+                 .sort_values(by='detection_effectiveness', ascending=False)
 
     def log(self):
         runs = runtime.setup()
