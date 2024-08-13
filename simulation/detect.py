@@ -87,4 +87,5 @@ def cusum(
         'attacks': len(meta.get('attacks', []) or []),
         'attack_points': meta.get('attacks', []) or [],
         'change_points': spikes,
+        'readings': readings
     }, context={'hits': hits, 'misses': misses})

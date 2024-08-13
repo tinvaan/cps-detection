@@ -9,10 +9,10 @@ from simulation.elevator.runtime import Config
 
 
 class ChangeWriter:
-    def __init__(self, data: dict):
-        self.changes = self.process(data)
+    def __init__(self, changesets):
+        self.changes = self.process(changesets)
         self.changes = self.changes[[
-            'round',
+            'cycle',
             'category',
             'drift',
             'threshold',
@@ -23,7 +23,8 @@ class ChangeWriter:
             'detected',
             'false_alarms',
             'detection_effectiveness',
-            'false_alarm_rate'
+            'false_alarm_rate',
+            'readings'
         ]]
 
     def get(self, category, best=False):
