@@ -203,7 +203,7 @@ class Elevator:
     def simulate(
         self,
         state: ElevatorState,
-        rounds: int,
+        cycles: int,
         attack_type: str="NONE",
         attack_start: int=1,
         attack_end: int=Config.SIMULATION_ROUNDS
@@ -212,7 +212,7 @@ class Elevator:
         weights: List[int] = []             # Temperature values under noise
         simulations: List[dict] = []        # state of the system for the current simulation cycle
 
-        for cycle in range(rounds):
+        for cycle in range(cycles):
             noise = self.get_noisy_elevator_state(state)
 
             if not state.moving and random.randint(1, 10) == 1:

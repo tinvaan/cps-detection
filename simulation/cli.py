@@ -37,7 +37,7 @@ def run(sensor, category):
                 params={'drift': drift, 'threshold': threshold},
                 meta={'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
             )
-            defects.update({'round': cycle, 'drift': drift, 'threshold': threshold})
+            defects.update({'cycle': cycle, 'drift': drift, 'threshold': threshold})
             summary.append(defects)
 
     duration = timer() - begin
