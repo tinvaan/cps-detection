@@ -5,6 +5,7 @@ from os import path
 
 from elevator import runtime
 from elevator.runtime import Config
+from simulation.plots import draw
 
 
 class ChangeWriter:
