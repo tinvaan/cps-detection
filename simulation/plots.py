@@ -2,7 +2,7 @@
 import os
 import matplotlib.pyplot as plt
 
-from elevator.runtime import Config
+from simulation.elevator.runtime import Config
 
 
 def draw(MAX_TEMP, MAX_WEIGHT, sensor_measurements, actuators_status, title=("NONE", False), detection_status=None):

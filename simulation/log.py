@@ -3,9 +3,9 @@ import pandas as pd
 
 from os import path
 
-from elevator import runtime
-from elevator.runtime import Config
-from simulation.plots import draw
+from simulation import plots
+from simulation.elevator import runtime
+from simulation.elevator.runtime import Config
 
 
 class ChangeWriter:

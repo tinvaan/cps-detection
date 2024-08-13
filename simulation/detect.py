@@ -1,5 +1,5 @@
 
-from elevator.utils import group
+from simulation.elevator.utils import group
 
 
 def verify(state):
