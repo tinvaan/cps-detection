@@ -11,24 +11,9 @@ def draw(frame, dst=None):
     maxTemp = [status['MAX_TEMP'] for status in frame.readings]
     maxWeight = [status['MAX_WEIGHT'] for status in frame.readings]
 
+    boldAlpha = False
     fig, axs = plt.subplots(2, figsize=(12, 12))
     axs[0].set_title(f"Raw sensor measurements (Attack type: {frame.category})")
-
-    d = plt.axvspan(min(frame.change_points), max(frame.change_points),
-                    alpha=0.25, color='yellow', label=f'Detect')
-    plt.annotate(
-        xy=d.get_center(),
-        text=f'''
-        Detection Effectiveness = {frame.detection_effectiveness}%
-        False Alarm Rate = {frame.false_alarm_rate}%
-        '''
-    )
-
-    for idx, attacks in enumerate(frame.attack_points):
-        if idx > 0:
-            plt.axvspan(min(attacks), max(attacks), alpha=0.1, color='red')
-        else:
-            plt.axvspan(min(attacks), max(attacks), alpha=0.1, color='red', label=f'Attack')
 
     if frame.category == "BUTTON_ATTACK":
         axs[0].plot([1 if status['currentLevel'] == 1 else 0 for status in frame.readings],
@@ -48,11 +33,25 @@ def draw(frame, dst=None):
         axs[0].plot(weights, linestyle="-", linewidth=0.8, label="Elevator load")
 
     else:   # BIAS, SURGE, RANDOM, etc...
+        boldAlpha = True
         axs[0].plot(maxTemp, linestyle="-", linewidth=5, label="MAX_TEMP")
-        axs[0].plot(maxWeight, linestyle="-", linewidth=5, label="MAX_WEIGHT")
-
         axs[0].plot(temps, linestyle="-", linewidth=0.8, label="Temperature")
-        axs[0].plot(weights, linestyle="-", linewidth=0.8, label="Elevator load")
+
+    d = plt.axvspan(min(frame.change_points), max(frame.change_points),
+                    alpha=1.0 if boldAlpha else 0.25, color='yellow', label=f'Detect')
+    plt.annotate(
+        xy=d.get_center(),
+        text=f'''
+        Detection Effectiveness = {frame.detection_effectiveness}%
+        False Alarm Rate = {frame.false_alarm_rate}%
+        '''
+    )
+
+    for idx, attacks in enumerate(frame.attack_points):
+        if idx > 0:
+            plt.axvspan(min(attacks), max(attacks), alpha=0.1, color='red')
+        else:
+            plt.axvspan(min(attacks), max(attacks), alpha=0.1, color='red', label=f'Attack')
     axs[0].legend()
 
     axs[1].plot([status["moving"] for status in frame.readings], linestyle="-", linewidth=0.8, label="Moving")
