@@ -8,8 +8,8 @@ from simulation.elevator.runtime import Config
 def draw(frame, dst=None):
     runs = frame.readings.tolist().pop()
     category = frame.category.unique().tolist().pop()
-    temps, maxTemp = [status['temp'] for status in runs], max([status['MAX_TEMP'] for status in runs])
-    weights, maxWeight = [status['weight'] for status in runs], max([status['MAX_WEIGHT'] for status in runs])
+    temps, maxTemp = [status['temp'] for status in runs], [status['MAX_TEMP'] for status in runs]
+    weights, maxWeight = [status['weight'] for status in runs], [status['MAX_WEIGHT'] for status in runs]
 
     fig, axs = plt.subplots(2, figsize=(12, 12))
     axs[0].set_title(f"Raw sensor measurements (Attack type: {category})")
