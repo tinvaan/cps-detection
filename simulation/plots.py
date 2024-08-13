@@ -13,8 +13,13 @@ def draw(frame, dst=None):
 
     fig, axs = plt.subplots(2, figsize=(12, 12))
     axs[0].set_title(f"Raw sensor measurements (Attack type: {category})")
-    # axs[0].plot(frame.change_points.tolist().pop(), linestyle="-", linewidth=2.0, label="Change Points")
-    # axs[0].plot(frame.attack_points.tolist().pop(), linestyle="-", linewidth=2.0, label="Attack Points")
+
+    detections = frame.change_points.tolist().pop()
+    plt.axvspan(min(detections), max(detections), alpha=0.25,
+                color='yellow', label=f'detected[({min(detections), max(detections)})]')
+    for attacks in frame.attack_points.tolist().pop():
+        plt.axvspan(min(attacks), max(attacks),
+                    alpha=0.1, color='red', label=f'attacked[({min(attacks), max(attacks)})')
 
     if category == "BUTTON_ATTACK":
         axs[0].plot([1 if status['currentLevel'] == 1 else 0 for status in runs],
@@ -41,8 +46,6 @@ def draw(frame, dst=None):
         axs[0].plot(weights, linestyle="-", linewidth=0.8, label="Elevator load")
     axs[0].legend()
 
-    # axs[1].plot(frame.change_points.tolist().pop(), linestyle="-", linewidth=2.0, label="Change Points")
-    # axs[1].plot(frame.attack_points.tolist().pop(), linestyle="-", linewidth=2.0, label="Attack Points")
     axs[1].plot([status["moving"] for status in runs], linestyle="-", linewidth=0.8, label="Moving")
     axs[1].plot([status["fire_alarm"] for status in runs], linestyle="-", linewidth=5, label="Fire Alarm")
     axs[1].plot([status["overweight_alarm"] for status in runs], linestyle="-", linewidth=5, label="Load Alarm")
