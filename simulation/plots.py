@@ -69,3 +69,5 @@ def draw(frame, dst=None):
         num = len([f for f in os.listdir(dst) if os.path.isfile(os.path.join(dst, f))]) + 1
         fig.savefig(f"{dst}/{num}.png")
         plt.close()
+
+    return frame

@@ -53,7 +53,7 @@ class ChangeWriter:
                                   self.changes['detection_effectiveness'].max()]
             df = df.loc[df['false_alarm_rate'] == df['false_alarm_rate'].min()]\
                     .sort_values(by='attacks', ascending=False).iloc[:1]
-            plots.draw(df)
+            return plots.draw(df)
 
     def process(self, summary):
         for idx, record in enumerate(summary):

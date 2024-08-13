@@ -42,8 +42,7 @@ def run(sensor, category):
 
     duration = timer() - begin
     writer = ChangeWriter(summary)
-    writer.log()
-    return writer.changes, duration
+    return writer.log(), duration
 
 
 if __name__ == "__main__":
@@ -54,7 +53,6 @@ if __name__ == "__main__":
 
     category = args.attack or random.choice(Config.ATTACK_TYPES)
     defects, duration = run(args.sensor or "temp", category)
-    defects = ChangeWriter(defects).get(category)
 
     print(defects)
     print(f"\ntime elapsed: {duration} seconds")
