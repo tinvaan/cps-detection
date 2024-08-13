@@ -6,11 +6,10 @@ import random
 from tqdm import tqdm
 from time import perf_counter as timer
 
-from elevator import runtime
-from elevator.runtime import Config
-from elevator.simulator import Elevator
-
 from simulation.detect import cusum
+from simulation.elevator import runtime
+from simulation.elevator.runtime import Config
+from simulation.elevator.simulator import Elevator
 from simulation.log import ChangeWriter
 
 

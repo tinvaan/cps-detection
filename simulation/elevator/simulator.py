@@ -5,7 +5,7 @@ import numpy as np
 from typing import List
 from dataclasses import asdict, dataclass, field
 
-from .runtime import Config
+from simulation.elevator.runtime import Config
 
 
 @dataclass
