@@ -15,11 +15,20 @@ def draw(frame, dst=None):
     axs[0].set_title(f"Raw sensor measurements (Attack type: {category})")
 
     detections = frame.change_points.tolist().pop()
-    plt.axvspan(min(detections), max(detections), alpha=0.25,
-                color='yellow', label=f'detected[({min(detections), max(detections)})]')
-    for attacks in frame.attack_points.tolist().pop():
-        plt.axvspan(min(attacks), max(attacks),
-                    alpha=0.1, color='red', label=f'attacked[({min(attacks), max(attacks)})')
+    d = plt.axvspan(min(detections), max(detections), alpha=0.25, color='yellow', label=f'Detect')
+    plt.annotate(
+        xy=d.get_center(),
+        text=f'''
+        Detection Effectiveness = {frame.detection_effectiveness.tolist().pop()}%
+        False Alarm Rate = {frame.false_alarm_rate.tolist().pop()}%
+        '''
+    )
+
+    for idx, attacks in enumerate(frame.attack_points.tolist().pop()):
+        if idx > 0:
+            plt.axvspan(min(attacks), max(attacks), alpha=0.1, color='red')
+        else:
+            plt.axvspan(min(attacks), max(attacks), alpha=0.1, color='red', label=f'Attack')
 
     if category == "BUTTON_ATTACK":
         axs[0].plot([1 if status['currentLevel'] == 1 else 0 for status in runs],
