@@ -6,6 +6,10 @@ def verify(state):
     try:
         assert state.get('weight') < state.get('MAX_WEIGHT'), "Weight exceeds threshold"
         assert state.get('temp') < state.get('MAX_TEMP'), "Temperature exceeds threshold"
+        assert state.get('moving') and state.get('doorOpening'), "Door open when elevator is moving"
+
+        # TODO: Decide if you can move to level 1 when already at level 1?
+        # assert state.get('currentLevel1') and state.get('movingToLevel1'), "Cannot move to level 1, already at level 1"
 
         if bool(state.get('fire_alarm', False)):
             assert state.get('temp') > state.get('MAX_TEMP'),\
