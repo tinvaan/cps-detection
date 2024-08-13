@@ -20,8 +20,8 @@ def setup(dirs=False):
 class Config:
     ML = True
     DEBUG = True
-    SAVE_PLOTS = True
-    SHOW_PLOTS = False
+    SAVE_PLOTS = False
+    SHOW_PLOTS = True
     BIAS_SELECTION = list(range(-17, -14)) + list(range(14, 17))
 
     # Elevator initial values
