@@ -34,6 +34,7 @@ def run(sensor, category):
                 temps if sensor == 'temp' else weights,
                 [r.get(sensor or 'temp') for r in readings],
                 readings,
+                verify_state=bool(category != 'BIAS'),
                 params={'drift': drift, 'threshold': threshold},
                 meta={'property': 'temp', 'category': category, 'cycle': cycle, 'attacks': attacks.get(cycle)}
             )
