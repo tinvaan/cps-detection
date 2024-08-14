@@ -2,6 +2,8 @@
 import os
 import matplotlib.pyplot as plt
 
+from tqdm import tqdm
+
 from simulation.elevator.runtime import Config
 
 
@@ -37,15 +39,19 @@ def draw(frame, dst=None):
         axs[0].plot(maxTemp, linestyle="-", linewidth=5, label="MAX_TEMP")
         axs[0].plot(temps, linestyle="-", linewidth=0.8, label="Temperature")
 
-    d = plt.axvspan(min(frame.change_points), max(frame.change_points),
-                    alpha=1.0 if boldAlpha else 0.25, color='yellow', label=f'Detect')
-    plt.annotate(
-        xy=d.get_center(),
-        text=f'''
-        Detection Effectiveness = {frame.detection_effectiveness}%
-        False Alarm Rate = {frame.false_alarm_rate}%
-        '''
-    )
+    try:
+        d = plt.axvspan(min(frame.change_points), max(frame.change_points),
+                        alpha=1.0 if boldAlpha else 0.25, color='yellow', label=f'Detect')
+        plt.annotate(
+            xy=d.get_center(),
+            text=f'''
+            Detection Effectiveness = {frame.detection_effectiveness}%
+            False Alarm Rate = {frame.false_alarm_rate}%
+            '''
+        )
+    except Exception as err:
+        tqdm.write("No attack/detect ranges to highlight" + err.args[0])
+        raise err
 
     for idx, attacks in enumerate(frame.attack_points):
         if idx > 0:
