@@ -76,7 +76,7 @@ def cusum(
         neg.append(max(0, neg[-1] - deviation - drift))
 
         if pos[-1] > threshold or neg[-1] > threshold:
-            is_valid = True if not verify_state else verify(state)
+            is_valid = True if not verify_state else not verify(state)
             if is_valid:
                 spikes.append(ts)
                 pos[-1], neg[-1] = 0, 0
