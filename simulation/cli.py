@@ -55,5 +55,5 @@ if __name__ == "__main__":
     category = args.attack or random.choice(Config.ATTACK_TYPES)
     defects, duration = run(args.sensor or "temp", category)
 
-    print(defects)
+    print("\n", defects.to_frame().T)
     print(f"\ntime elapsed: {duration} seconds")
