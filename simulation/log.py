@@ -52,15 +52,8 @@ class ChangeWriter:
             frames = self.changes.loc[self.changes['detection_effectiveness'] ==
                                       self.changes['detection_effectiveness'].max()]
             frames = frames.loc[frames['false_alarm_rate'] == frames['false_alarm_rate'].min()]\
-                            .sort_values(by='attacks', ascending=False)
-
-            # Find the frame with highest attack and detection overlap
-            for idx, df in frames.iterrows():
-                for cp in df.change_points:
-                    if all([cp in range(pts[0], pts[1]) for pts in df.attack_points]):
-                        break
-
-            return plots.draw(df)
+                            .sort_values(by='attacks', ascending=False).iloc[:1]
+            return plots.draw(frames.squeeze(axis=0))
 
     def process(self, summary):
         for idx, record in enumerate(summary):
